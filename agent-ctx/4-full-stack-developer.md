@@ -1,53 +1,19 @@
-# Task 4 - Update page.tsx for New Database Fields
+---
+Task ID: 4
+Agent: full-stack-developer
+Task: Create GitHub Actions workflow for building Android APK
 
-## Status: COMPLETED ✅
+Work Log:
+- Created `.github/workflows/build-android.yml` with full CI/CD pipeline
+- Created `.github/dependabot.yml` for automated dependency updates
+- Updated `.gitignore` with Android, database, and build artifact entries
+- Did NOT add `capacitor.config.ts` to gitignore (needed for builds)
 
-## Summary
-Updated `/home/z/my-project/src/app/page.tsx` to support new database fields (`branch`, `surah`, `category`) and relaxed validation for optional fields.
-
-## Changes Made
-
-### 1. TypeScript Interfaces Updated
-- **Halaka**: Added `branch: string` field
-- **Student**: Added `surah: string` and `category: string` fields
-
-### 2. New Constants Added
-- `BRANCHES = ['وبرة', 'الوادي', 'السرور']`
-- `CATEGORIES = ['1-10', '10-20', '20-30', 'محو الامية']`
-- `BRANCH_COLORS` - Badge colors: وبرة=teal, الوادي=cyan, السرور=emerald
-- `CATEGORY_COLORS` - Badge colors: 1-10=green, 10-20=blue, 20-30=amber, محو الامية=purple
-
-### 3. Form States Updated
-- `halakaForm`: Added `branch: 'السرور'` default value
-- `studentForm`: Added `surah: ''` and `category: '1-10'` default values
-- Updated ALL form reset locations (createHalaka, updateHalaka, createStudent, updateStudent)
-
-### 4. Validation Changes
-- `createHalaka`: Only requires `name` and `teacher` (time/location/branch now optional)
-- `createStudent`: Only requires `name` (parentName/parentPhone now optional)
-
-### 5. HalakatTab Component Updated
-- Added `branch` Select dropdown to the add form
-- Added `branch` column to the halakat table (hidden on small screens)
-- Added `branch` field to the edit dialog
-- Branch displayed as colored Badge
-
-### 6. StudentsTab Component Updated
-- Added `surah` Input field to the add form
-- Added `category` Select dropdown to the add form
-- Added `surah` and `category` columns to the students table
-- Added `surah` and `category` fields to the edit dialog
-- Category displayed as colored Badge with different colors per value
-- Removed `*` required indicator from parentName and parentPhone labels
-
-### 7. Auth Seed Init Updated
-- Added call to `/api/seed-data` after `/api/auth/seed` in the init useEffect
-
-### 8. All Existing Functionality Preserved
-- DashboardTab, AttendanceTab, MediaTab, ActivitiesTab unchanged
-- All CRUD operations working
-- All styling consistent
-
-## Verification
-- ESLint: Passed with no errors
-- Dev server: Compiled successfully, page renders without errors
+Stage Summary:
+- Workflow triggers on push to `main` and manual dispatch
+- Pipeline: Checkout → Bun setup → Install deps → Java 17 → Android SDK → Gradle cache → Capacitor → Build APK
+- Uploads both debug and release APKs as artifacts
+- Creates GitHub releases automatically with versioned tags (v1.0.{run_number})
+- Release signing uses secrets (KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
+- Dependabot monitors: GitHub Actions (weekly), npm packages (weekly), Docker (monthly)
+- Core framework major bumps ignored (Next.js, React, Prisma) to prevent breaking changes

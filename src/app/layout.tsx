@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cairo, Amiri } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,10 +15,56 @@ const amiri = Amiri({
   weight: ["400", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "مركز الشفاء | لوحة التحكم",
-  description: "نظام إدارة مراكز تحفيظ القرآن الكريم - مركز الشفاء",
+export const viewport: Viewport = {
+  themeColor: "#1a5f4a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
+
+export const metadata: Metadata = {
+  title: "مركز الشفاء | تحفيظ القرآن الكريم",
+  description: "نظام إدارة مراكز تحفيظ القرآن الكريم - مركز الشفاء لتحفيظ القرآن الكريم",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "مركز الشفاء",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+  openGraph: {
+    title: "مركز الشفاء لتحفيظ القرآن الكريم",
+    description: "نظام إدارة مراكز تحفيظ القرآن الكريم",
+    type: "website",
+    locale: "ar_SA",
+  },
+};
+
+function ServiceWorkerRegistration() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js')
+                .then(function(registration) {
+                  console.log('SW registered:', registration.scope);
+                })
+                .catch(function(error) {
+                  console.log('SW registration failed:', error);
+                });
+            });
+          }
+        `,
+      }}
+    />
+  );
+}
 
 export default function RootLayout({
   children,
@@ -27,6 +73,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <ServiceWorkerRegistration />
+      </head>
       <body
         className={`${cairo.variable} ${amiri.variable} antialiased font-[family-name:var(--font-cairo)]`}
         style={{ backgroundColor: '#f8f9fa' }}

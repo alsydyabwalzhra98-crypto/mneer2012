@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const results = []
+    const results: unknown[] = []
 
     for (const record of records) {
       const { studentId, status, notes } = record
