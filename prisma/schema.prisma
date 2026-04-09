@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Halaka {
+  id          String    @id @default(cuid())
+  name        String
+  teacher     String
+  time        String
+  location    String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  students    Student[]
+  attendance  Attendance[]
+}
+
+model Student {
+  id         String   @id @default(cuid())
+  name       String
+  age        Int?
+  parentName String
+  parentPhone String
+  level      String   @default("مبتدئ")
+  halakaId   String?
+  halaka     Halaka?  @relation(fields: [halakaId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  attendance Attendance[]
+}
+
+model Attendance {
+  id         String   @id @default(cuid())
+  date       String
+  status     String   @default("حاضر")
+  notes      String?
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  halakaId   String?
+  halaka     Halaka?  @relation(fields: [halakaId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([studentId, date])
+}
+
+model MediaImage {
+  id        String   @id @default(cuid())
+  album     String
+  filename  String
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  date        String
+  type        String   @default("عامة")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
