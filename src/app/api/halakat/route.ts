@@ -23,17 +23,24 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, teacher, time, location, description } = body
+    const { name, teacher, time, location, branch, description } = body
 
-    if (!name || !teacher || !time || !location) {
+    if (!name || !teacher) {
       return NextResponse.json(
-        { error: 'جميع الحقول المطلوبة يجب أن تُملأ' },
+        { error: 'اسم الحلقة والمعلم مطلوبان' },
         { status: 400 }
       )
     }
 
     const halaka = await db.halaka.create({
-      data: { name, teacher, time, location, description }
+      data: {
+        name,
+        teacher,
+        time: time || '',
+        location: location || '',
+        branch: branch || 'السرور',
+        description
+      }
     })
 
     return NextResponse.json(halaka, { status: 201 })
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
-    const { id, name, teacher, time, location, description } = body
+    const { id, name, teacher, time, location, branch, description } = body
 
     if (!id) {
       return NextResponse.json({ error: 'معرف الحلقة مطلوب' }, { status: 400 })
@@ -55,7 +62,7 @@ export async function PUT(request: Request) {
 
     const halaka = await db.halaka.update({
       where: { id },
-      data: { name, teacher, time, location, description }
+      data: { name, teacher, time, location, branch, description }
     })
 
     return NextResponse.json(halaka)

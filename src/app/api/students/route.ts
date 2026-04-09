@@ -19,11 +19,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, age, parentName, parentPhone, level, halakaId } = body
+    const { name, age, surah, category, parentName, parentPhone, level, halakaId } = body
 
-    if (!name || !parentName || !parentPhone) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'الاسم وولي الأمر ورقم الهاتف مطلوبان' },
+        { error: 'اسم الطالب مطلوب' },
         { status: 400 }
       )
     }
@@ -32,8 +32,10 @@ export async function POST(request: Request) {
       data: {
         name,
         age: age ? parseInt(age) : null,
-        parentName,
-        parentPhone,
+        surah: surah || '',
+        category: category || '1-10',
+        parentName: parentName || '',
+        parentPhone: parentPhone || '',
         level: level || 'مبتدئ',
         halakaId: halakaId || null
       }
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
-    const { id, name, age, parentName, parentPhone, level, halakaId } = body
+    const { id, name, age, surah, category, parentName, parentPhone, level, halakaId } = body
 
     if (!id) {
       return NextResponse.json({ error: 'معرف الطالب مطلوب' }, { status: 400 })
@@ -61,8 +63,10 @@ export async function PUT(request: Request) {
       data: {
         name,
         age: age ? parseInt(age) : null,
-        parentName,
-        parentPhone,
+        surah: surah || '',
+        category: category || '1-10',
+        parentName: parentName || '',
+        parentPhone: parentPhone || '',
         level,
         halakaId: halakaId || null
       }

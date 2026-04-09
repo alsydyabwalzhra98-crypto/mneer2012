@@ -22,6 +22,7 @@ model Halaka {
   teacher     String
   time        String
   location    String
+  branch      String   @default("السرور")
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -30,17 +31,19 @@ model Halaka {
 }
 
 model Student {
-  id         String   @id @default(cuid())
-  name       String
-  age        Int?
-  parentName String
-  parentPhone String
-  level      String   @default("مبتدئ")
-  halakaId   String?
-  halaka     Halaka?  @relation(fields: [halakaId], references: [id], onDelete: SetNull)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  attendance Attendance[]
+  id          String   @id @default(cuid())
+  name        String
+  age         Int?
+  surah       String   @default("")
+  category    String   @default("1-10")
+  parentName  String   @default("")
+  parentPhone String   @default("")
+  level       String   @default("مبتدئ")
+  halakaId    String?
+  halaka      Halaka?  @relation(fields: [halakaId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  attendance  Attendance[]
 }
 
 model Attendance {

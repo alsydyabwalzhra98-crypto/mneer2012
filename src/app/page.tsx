@@ -64,6 +64,7 @@ interface Halaka {
   teacher: string
   time: string
   location: string
+  branch: string
   description?: string
   createdAt: string
   _count?: { students: number }
@@ -73,6 +74,8 @@ interface Student {
   id: string
   name: string
   age?: number
+  surah: string
+  category: string
   parentName: string
   parentPhone: string
   level: string
@@ -136,6 +139,10 @@ const ALBUMS = [
 
 const LEVELS = ['مبتدئ', 'متوسط', 'متقدم']
 
+const BRANCHES = ['وبرة', 'الوادي', 'السرور']
+
+const CATEGORIES = ['1-10', '10-20', '20-30', 'محو الامية']
+
 const STATUS_COLORS: Record<string, string> = {
   حاضر: 'bg-emerald-100 text-emerald-800 border-emerald-300',
   غائب: 'bg-red-100 text-red-800 border-red-300',
@@ -143,6 +150,19 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const ACTIVITY_TYPES = ['عامة', 'قرآنية', 'ثقافية', 'رياضية', 'اجتماعية']
+
+const BRANCH_COLORS: Record<string, string> = {
+  وبرة: 'bg-teal-100 text-teal-700 border-teal-300',
+  الوادي: 'bg-cyan-100 text-cyan-700 border-cyan-300',
+  السرور: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  '1-10': 'bg-green-100 text-green-700',
+  '10-20': 'bg-blue-100 text-blue-700',
+  '20-30': 'bg-amber-100 text-amber-700',
+  'محو الامية': 'bg-purple-100 text-purple-700',
+}
 
 // ── Main Component ─────────────────────────────────────────────
 export default function Home() {
@@ -168,6 +188,7 @@ export default function Home() {
     teacher: '',
     time: '',
     location: '',
+    branch: 'السرور',
     description: '',
   })
   const [editingHalaka, setEditingHalaka] = useState<Halaka | null>(null)
@@ -177,6 +198,8 @@ export default function Home() {
   const [studentForm, setStudentForm] = useState({
     name: '',
     age: '',
+    surah: '',
+    category: '1-10',
     parentName: '',
     parentPhone: '',
     level: 'مبتدئ',
@@ -213,6 +236,11 @@ export default function Home() {
     const init = async () => {
       try {
         await fetch('/api/auth/seed')
+      } catch {
+        // ignore seed errors
+      }
+      try {
+        await fetch('/api/seed-data')
       } catch {
         // ignore seed errors
       }
@@ -354,8 +382,8 @@ export default function Home() {
 
   // ── Halaka CRUD ────────────────────────────────────────────
   const createHalaka = async () => {
-    if (!halakaForm.name || !halakaForm.teacher || !halakaForm.time || !halakaForm.location) {
-      toast.error('جميع الحقول المطلوبة يجب أن تُملأ')
+    if (!halakaForm.name || !halakaForm.teacher) {
+      toast.error('اسم الحلقة واسم المعلم مطلوبان')
       return
     }
     try {
@@ -370,7 +398,7 @@ export default function Home() {
         return
       }
       toast.success('تم إنشاء الحلقة بنجاح')
-      setHalakaForm({ name: '', teacher: '', time: '', location: '', description: '' })
+      setHalakaForm({ name: '', teacher: '', time: '', location: '', branch: 'السرور', description: '' })
       loadHalakat()
       loadDashboard()
     } catch {
@@ -394,7 +422,7 @@ export default function Home() {
       toast.success('تم تحديث الحلقة بنجاح')
       setEditingHalaka(null)
       setHalakaDialogOpen(false)
-      setHalakaForm({ name: '', teacher: '', time: '', location: '', description: '' })
+      setHalakaForm({ name: '', teacher: '', time: '', location: '', branch: 'السرور', description: '' })
       loadHalakat()
     } catch {
       toast.error('خطأ في الاتصال')
@@ -424,6 +452,7 @@ export default function Home() {
       teacher: h.teacher,
       time: h.time,
       location: h.location,
+      branch: h.branch || 'السرور',
       description: h.description || '',
     })
     setHalakaDialogOpen(true)
@@ -431,8 +460,8 @@ export default function Home() {
 
   // ── Student CRUD ───────────────────────────────────────────
   const createStudent = async () => {
-    if (!studentForm.name || !studentForm.parentName || !studentForm.parentPhone) {
-      toast.error('الاسم وولي الأمر ورقم الهاتف مطلوبان')
+    if (!studentForm.name) {
+      toast.error('اسم الطالب مطلوب')
       return
     }
     try {
@@ -447,7 +476,7 @@ export default function Home() {
         return
       }
       toast.success('تم إضافة الطالب بنجاح')
-      setStudentForm({ name: '', age: '', parentName: '', parentPhone: '', level: 'مبتدئ', halakaId: '' })
+      setStudentForm({ name: '', age: '', surah: '', category: '1-10', parentName: '', parentPhone: '', level: 'مبتدئ', halakaId: '' })
       loadStudents()
       loadHalakat()
       loadDashboard()
@@ -472,7 +501,7 @@ export default function Home() {
       toast.success('تم تحديث بيانات الطالب بنجاح')
       setEditingStudent(null)
       setStudentDialogOpen(false)
-      setStudentForm({ name: '', age: '', parentName: '', parentPhone: '', level: 'مبتدئ', halakaId: '' })
+      setStudentForm({ name: '', age: '', surah: '', category: '1-10', parentName: '', parentPhone: '', level: 'مبتدئ', halakaId: '' })
       loadStudents()
     } catch {
       toast.error('خطأ في الاتصال')
@@ -500,6 +529,8 @@ export default function Home() {
     setStudentForm({
       name: s.name,
       age: s.age?.toString() || '',
+      surah: s.surah || '',
+      category: s.category || '1-10',
       parentName: s.parentName,
       parentPhone: s.parentPhone,
       level: s.level,
@@ -1231,8 +1262,8 @@ function HalakatTab({
   onEdit,
 }: {
   halakat: Halaka[]
-  halakaForm: { name: string; teacher: string; time: string; location: string; description: string }
-  setHalakaForm: (f: { name: string; teacher: string; time: string; location: string; description: string }) => void
+  halakaForm: { name: string; teacher: string; time: string; location: string; branch: string; description: string }
+  setHalakaForm: (f: { name: string; teacher: string; time: string; location: string; branch: string; description: string }) => void
   editingHalaka: Halaka | null
   halakaDialogOpen: boolean
   setHalakaDialogOpen: (o: boolean) => void
@@ -1271,7 +1302,25 @@ function HalakatTab({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>الوقت *</Label>
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>الفرع</Label>
+              <Select
+                value={halakaForm.branch}
+                onValueChange={(v) => setHalakaForm({ ...halakaForm, branch: v })}
+              >
+                <SelectTrigger className="text-right">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BRANCHES.map((b) => (
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>الوقت</Label>
               <Input
                 placeholder="مثال: 4:00 - 6:00 مساءً"
                 value={halakaForm.time}
@@ -1280,7 +1329,7 @@ function HalakatTab({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>المكان *</Label>
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>المكان</Label>
               <Input
                 placeholder="مثال: المصلى الرئيسي"
                 value={halakaForm.location}
@@ -1288,14 +1337,13 @@ function HalakatTab({
                 className="text-right"
               />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label className="text-sm" style={{ color: '#1a5f4a' }}>وصف (اختياري)</Label>
-              <Textarea
+              <Input
                 placeholder="وصف مختصر للحلقة"
                 value={halakaForm.description}
                 onChange={(e) => setHalakaForm({ ...halakaForm, description: e.target.value })}
                 className="text-right"
-                rows={2}
               />
             </div>
           </div>
@@ -1339,6 +1387,7 @@ function HalakatTab({
                     <TableHead className="text-white font-semibold text-sm hidden lg:table-cell">
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> المكان</span>
                     </TableHead>
+                    <TableHead className="text-white font-semibold text-sm hidden sm:table-cell">الفرع</TableHead>
                     <TableHead className="text-white font-semibold text-sm">الطلاب</TableHead>
                     <TableHead className="text-white font-semibold text-sm text-center">إجراءات</TableHead>
                   </TableRow>
@@ -1348,8 +1397,13 @@ function HalakatTab({
                     <TableRow key={h.id} className="hover:bg-gray-50">
                       <TableCell className="font-semibold text-sm">{h.name}</TableCell>
                       <TableCell className="text-sm">{h.teacher}</TableCell>
-                      <TableCell className="text-sm hidden md:table-cell">{h.time}</TableCell>
-                      <TableCell className="text-sm hidden lg:table-cell">{h.location}</TableCell>
+                      <TableCell className="text-sm hidden md:table-cell">{h.time || '-'}</TableCell>
+                      <TableCell className="text-sm hidden lg:table-cell">{h.location || '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant="outline" className={`text-xs ${BRANCH_COLORS[h.branch] || ''}`}>
+                          {h.branch || '-'}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs" style={{ color: '#1a5f4a', borderColor: '#1a5f4a40' }}>
                           {h._count?.students || 0}
@@ -1370,7 +1424,7 @@ function HalakatTab({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (confirm('هل أنت متأكد من حذف هذه الحلقة؟')) deleteHalaka_(h.id)
+                              if (confirm('هل أنت متأكد من حذف هذه الحلقة؟')) onDelete(h.id)
                             }}
                             className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
                           >
@@ -1415,21 +1469,39 @@ function HalakatTab({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className="text-sm" style={{ color: '#1a5f4a' }}>الوقت *</Label>
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>الفرع</Label>
+                <Select
+                  value={halakaForm.branch}
+                  onValueChange={(v) => setHalakaForm({ ...halakaForm, branch: v })}
+                >
+                  <SelectTrigger className="text-right">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BRANCHES.map((b) => (
+                      <SelectItem key={b} value={b}>
+                        {b}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>الوقت</Label>
                 <Input
                   value={halakaForm.time}
                   onChange={(e) => setHalakaForm({ ...halakaForm, time: e.target.value })}
                   className="text-right"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm" style={{ color: '#1a5f4a' }}>المكان *</Label>
-                <Input
-                  value={halakaForm.location}
-                  onChange={(e) => setHalakaForm({ ...halakaForm, location: e.target.value })}
-                  className="text-right"
-                />
-              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>المكان</Label>
+              <Input
+                value={halakaForm.location}
+                onChange={(e) => setHalakaForm({ ...halakaForm, location: e.target.value })}
+                className="text-right"
+              />
             </div>
             <div className="space-y-2">
               <Label className="text-sm" style={{ color: '#1a5f4a' }}>وصف</Label>
@@ -1465,11 +1537,6 @@ function HalakatTab({
       </Dialog>
     </div>
   )
-
-  // Local delete function for the table
-  async function deleteHalaka_(id: string) {
-    onDelete(id)
-  }
 }
 
 // ── Students Tab Component ─────────────────────────────────────
@@ -1488,8 +1555,8 @@ function StudentsTab({
 }: {
   students: Student[]
   halakat: Halaka[]
-  studentForm: { name: string; age: string; parentName: string; parentPhone: string; level: string; halakaId: string }
-  setStudentForm: (f: { name: string; age: string; parentName: string; parentPhone: string; level: string; halakaId: string }) => void
+  studentForm: { name: string; age: string; surah: string; category: string; parentName: string; parentPhone: string; level: string; halakaId: string }
+  setStudentForm: (f: { name: string; age: string; surah: string; category: string; parentName: string; parentPhone: string; level: string; halakaId: string }) => void
   editingStudent: Student | null
   studentDialogOpen: boolean
   setStudentDialogOpen: (o: boolean) => void
@@ -1536,6 +1603,33 @@ function StudentsTab({
               />
             </div>
             <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>السورة</Label>
+              <Input
+                placeholder="مثال: النبأ، الملك"
+                value={studentForm.surah}
+                onChange={(e) => setStudentForm({ ...studentForm, surah: e.target.value })}
+                className="text-right"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>الفئة</Label>
+              <Select
+                value={studentForm.category}
+                onValueChange={(v) => setStudentForm({ ...studentForm, category: v })}
+              >
+                <SelectTrigger className="text-right">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label className="text-sm" style={{ color: '#1a5f4a' }}>المستوى</Label>
               <Select
                 value={studentForm.level}
@@ -1554,7 +1648,7 @@ function StudentsTab({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>اسم ولي الأمر *</Label>
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>اسم ولي الأمر</Label>
               <Input
                 placeholder="اسم ولي الأمر"
                 value={studentForm.parentName}
@@ -1565,7 +1659,7 @@ function StudentsTab({
             <div className="space-y-2">
               <Label className="text-sm" style={{ color: '#1a5f4a' }}>
                 <span className="flex items-center gap-1">
-                  <Phone className="w-3 h-3" /> رقم هاتف ولي الأمر *
+                  <Phone className="w-3 h-3" /> رقم هاتف ولي الأمر
                 </span>
               </Label>
               <Input
@@ -1628,9 +1722,11 @@ function StudentsTab({
                   <TableRow style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)' }}>
                     <TableHead className="text-white font-semibold text-sm">الطالب</TableHead>
                     <TableHead className="text-white font-semibold text-sm hidden sm:table-cell">العمر</TableHead>
+                    <TableHead className="text-white font-semibold text-sm">الفئة</TableHead>
                     <TableHead className="text-white font-semibold text-sm">المستوى</TableHead>
-                    <TableHead className="text-white font-semibold text-sm hidden md:table-cell">ولي الأمر</TableHead>
-                    <TableHead className="text-white font-semibold text-sm hidden lg:table-cell">الحلقة</TableHead>
+                    <TableHead className="text-white font-semibold text-sm hidden md:table-cell">السورة</TableHead>
+                    <TableHead className="text-white font-semibold text-sm hidden lg:table-cell">ولي الأمر</TableHead>
+                    <TableHead className="text-white font-semibold text-sm hidden xl:table-cell">الحلقة</TableHead>
                     <TableHead className="text-white font-semibold text-sm text-center">إجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1640,17 +1736,23 @@ function StudentsTab({
                       <TableCell className="font-semibold text-sm">{s.name}</TableCell>
                       <TableCell className="text-sm hidden sm:table-cell">{s.age || '-'}</TableCell>
                       <TableCell>
+                        <Badge className={`text-xs ${CATEGORY_COLORS[s.category] || ''}`}>
+                          {s.category || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <Badge className={`text-xs ${levelBadgeColors[s.level] || ''}`}>
                           {s.level}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm hidden md:table-cell">
+                      <TableCell className="text-sm hidden md:table-cell">{s.surah || '-'}</TableCell>
+                      <TableCell className="text-sm hidden lg:table-cell">
                         <div>
-                          <p>{s.parentName}</p>
-                          <p className="text-xs" style={{ color: '#9ca3af' }}>{s.parentPhone}</p>
+                          <p>{s.parentName || '-'}</p>
+                          <p className="text-xs" style={{ color: '#9ca3af' }}>{s.parentPhone || ''}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm hidden lg:table-cell">
+                      <TableCell className="text-sm hidden xl:table-cell">
                         <Badge variant="outline" className="text-xs" style={{ color: '#1a5f4a', borderColor: '#1a5f4a40' }}>
                           {s.halaka?.name || '-'}
                         </Badge>
@@ -1716,6 +1818,35 @@ function StudentsTab({
                 />
               </div>
               <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>السورة</Label>
+                <Input
+                  placeholder="مثال: النبأ"
+                  value={studentForm.surah}
+                  onChange={(e) => setStudentForm({ ...studentForm, surah: e.target.value })}
+                  className="text-right"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>الفئة</Label>
+                <Select
+                  value={studentForm.category}
+                  onValueChange={(v) => setStudentForm({ ...studentForm, category: v })}
+                >
+                  <SelectTrigger className="text-right">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label className="text-sm" style={{ color: '#1a5f4a' }}>المستوى</Label>
                 <Select
                   value={studentForm.level}
@@ -1735,7 +1866,7 @@ function StudentsTab({
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>اسم ولي الأمر *</Label>
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>اسم ولي الأمر</Label>
               <Input
                 value={studentForm.parentName}
                 onChange={(e) => setStudentForm({ ...studentForm, parentName: e.target.value })}
@@ -1743,7 +1874,7 @@ function StudentsTab({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>رقم هاتف ولي الأمر *</Label>
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>رقم هاتف ولي الأمر</Label>
               <Input
                 value={studentForm.parentPhone}
                 onChange={(e) => setStudentForm({ ...studentForm, parentPhone: e.target.value })}
