@@ -58,3 +58,24 @@ Stage Summary:
 - All 6 tabs functional with shadcn/ui components
 - Toast notifications via sonner
 - Loading skeletons for async states
+
+---
+Task ID: 4
+Agent: main
+Task: Build Public Display View and Landing Page
+
+Work Log:
+- Created /api/public endpoint returning center data, halakat, branches, categories, activities
+- Generated Islamic banner image (/public/banner.png) using AI
+- Created LandingView component with admin login and public display entry points
+- Created PublicDisplayView component with hero banner, stats, branches, halakat by branch, categories
+- Updated page.tsx with viewMode state (landing/login/public) for navigation
+- Added Eye, ShieldCheck, ChevronLeft, ArrowRight, Image icons to imports
+
+Stage Summary:
+- Landing page shows two options: Admin Login and Public Display
+- Public display shows all center data without authentication
+- Halakat cards are collapsible with student lists
+- Data grouped by branch (وبرة, الوادي, السرور)
+- Categories shown with colored badges
+- ESLint clean (only 1 non-blocking warning)

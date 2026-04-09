@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import LandingView from '@/components/LandingView'
+import PublicDisplayView from '@/components/PublicDisplayView'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -54,7 +56,11 @@ import {
   Star,
   TrendingUp,
   Award,
-  Image as ImageIcon,
+  Eye,
+  ShieldCheck,
+  ChevronLeft,
+  ArrowRight,
+  Image,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
@@ -171,6 +177,7 @@ export default function Home() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [viewMode, setViewMode] = useState<'landing' | 'login' | 'public'>('landing')
 
   // Data states
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -753,80 +760,97 @@ export default function Home() {
     )
   }
 
-  // ── LOGIN VIEW ─────────────────────────────────────────────
+  // ── PUBLIC DISPLAY VIEW ─────────────────────────────────────
+  if (!isAuthenticated && viewMode === 'public') {
+    return <PublicDisplayView onBack={() => setViewMode('landing')} />
+  }
+
+  // ── LANDING + LOGIN VIEW ────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f8f9fa' }}>
-        <Card className="w-full max-w-md shadow-2xl border-0" style={{ borderRadius: '1.2rem' }}>
-          <CardHeader className="text-center pb-2 pt-8">
-            <div
-              className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)' }}
-            >
-              <BookOpen className="w-10 h-10 text-white" />
-            </div>
-            <CardTitle className="text-3xl font-bold" style={{ color: '#1a5f4a', fontFamily: 'var(--font-cairo)' }}>
-              مركز الشفاء
-            </CardTitle>
-            <p className="text-sm mt-1" style={{ color: '#6b7280' }}>
-              لوحة التحكم الإدارية المتكاملة
-            </p>
-            <Separator className="my-4" />
-          </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
-                  اسم المستخدم
-                </Label>
-                <Input
-                  id="username"
-                  placeholder="أدخل اسم المستخدم"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="h-11 text-right"
-                  style={{ borderColor: '#d1d5db' }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
-                  كلمة المرور
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="أدخل كلمة المرور"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 text-right"
-                  style={{ borderColor: '#d1d5db' }}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full h-12 text-lg font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-                style={{
-                  background: 'linear-gradient(135deg, #d4af37, #f4d03f)',
-                  color: '#0d3d2e',
-                  border: 'none',
-                }}
-                disabled={loginLoading}
+        {viewMode === 'landing' ? (
+          <LandingView onAdminLogin={() => setViewMode('login')} onPublicView={() => setViewMode('public')} />
+        ) : (
+          <Card className="w-full max-w-md shadow-2xl border-0" style={{ borderRadius: '1.2rem' }}>
+            <CardHeader className="text-center pb-2 pt-8">
+              <div
+                className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)' }}
               >
-                {loginLoading ? (
-                  <span className="flex items-center gap-2">
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    جاري تسجيل الدخول...
-                  </span>
-                ) : (
-                  'تسجيل الدخول'
-                )}
+                <BookOpen className="w-10 h-10 text-white" />
+              </div>
+              <CardTitle className="text-3xl font-bold" style={{ color: '#1a5f4a', fontFamily: 'var(--font-cairo)' }}>
+                مركز الشفاء
+              </CardTitle>
+              <p className="text-sm mt-1" style={{ color: '#6b7280' }}>
+                لوحة التحكم الإدارية المتكاملة
+              </p>
+              <Separator className="my-4" />
+            </CardHeader>
+            <CardContent className="px-8 pb-8">
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
+                    اسم المستخدم
+                  </Label>
+                  <Input
+                    id="username"
+                    placeholder="أدخل اسم المستخدم"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="h-11 text-right"
+                    style={{ borderColor: '#d1d5db' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
+                    كلمة المرور
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="أدخل كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 text-right"
+                    style={{ borderColor: '#d1d5db' }}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-lg font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: 'linear-gradient(135deg, #d4af37, #f4d03f)',
+                    color: '#0d3d2e',
+                    border: 'none',
+                  }}
+                  disabled={loginLoading}
+                >
+                  {loginLoading ? (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      جاري تسجيل الدخول...
+                    </span>
+                  ) : (
+                    'تسجيل الدخول'
+                  )}
+                </Button>
+              </form>
+              <Button
+                variant="ghost"
+                className="w-full mt-3 text-sm"
+                style={{ color: '#6b7280' }}
+                onClick={() => setViewMode('landing')}
+              >
+                رجوع للصفحة الرئيسية
               </Button>
-            </form>
-            <p className="text-xs text-center mt-6" style={{ color: '#9ca3af' }}>
-              بيانات الدخول الافتراضية: admin / admin123
-            </p>
-          </CardContent>
-        </Card>
+              <p className="text-xs text-center mt-4" style={{ color: '#9ca3af' }}>
+                بيانات الدخول الافتراضية: admin / admin123
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     )
   }
@@ -2177,7 +2201,7 @@ function MediaTab({
         <CardContent className="py-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
-              <ImageIcon className="w-4 h-4 inline ml-1" />
+              <Image className="w-4 h-4 inline ml-1" />
               تصفية حسب الألبوم:
             </span>
             <Button
