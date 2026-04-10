@@ -31,7 +31,7 @@ jobs:
       - name: Generate Prisma Client
         run: bun run db:generate
 
-      - name: Build Next.js
+      - name: Build Next.js (static export)
         run: bun run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -51,13 +51,8 @@ jobs:
       - name: Add Android Platform
         run: npx cap add android
 
-      - name: Copy build files
-        run: |
-          mkdir -p android/app/src/main/assets/public/_next/static
-          mkdir -p android/app/src/main/assets/public/_next/server
-          cp -r public/* android/app/src/main/assets/public/ 2>/dev/null || true
-          cp -r .next/static/* android/app/src/main/assets/public/_next/static/ 2>/dev/null || true
-          cp -r .next/server/* android/app/src/main/assets/public/_next/server/ 2>/dev/null || true
+      - name: Sync Capacitor
+        run: npx cap sync android
 
       - name: Build Debug APK
         working-directory: android
