@@ -328,13 +328,10 @@ export async function GET() {
     const adminCount = await db.admin.count()
     if (adminCount === 0) {
       await db.admin.create({
-        data: { username: 'admin', password: 'admin123', name: 'المدير' }
+        data: { username: 'Am2026', password: 'A777A777', name: 'المدير' }
       })
-    }
-    const publicCount = await db.admin.count({ where: { username: 'public' } })
-    if (publicCount === 0) {
       await db.admin.create({
-        data: { username: 'public', password: 'public123', name: 'العرض العام' }
+        data: { username: 'Hi', password: 'Hi123', name: 'العرض العام' }
       })
     }
 

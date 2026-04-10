@@ -8,18 +8,18 @@ export async function GET() {
     if (count === 0) {
       await db.admin.create({
         data: {
-          username: 'admin',
-          password: 'admin123',
+          username: 'Am2026',
+          password: 'A777A777',
           name: 'المدير'
         }
       })
     }
 
     // Seed public viewer
-    const publicCount = await db.admin.count({ where: { username: 'public' } })
+    const publicCount = await db.admin.count({ where: { username: 'Hi' } })
     if (publicCount === 0) {
       await db.admin.create({
-        data: { username: 'public', password: 'public123', name: 'العرض العام' }
+        data: { username: 'Hi', password: 'Hi123', name: 'العرض العام' }
       })
     }
 

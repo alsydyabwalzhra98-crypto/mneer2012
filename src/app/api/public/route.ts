@@ -55,6 +55,19 @@ export async function GET() {
       studentsCount: branchStudentMap[b.branch] || 0,
     }))
 
+    // Default albums that always show even if empty
+    const DEFAULT_ALBUMS = [
+      'حلقات تحفيظية',
+      'سرد قرآني',
+      'دورات سنوية',
+      'مسابقات سنوية',
+      'تكريم',
+      'احتفالات خريجين',
+      'متميزين',
+      'خريجون',
+      'أخرى',
+    ]
+
     // Get ALL media images with album grouping
     const allMedia = await db.mediaImage.findMany({
       orderBy: { createdAt: 'desc' },
@@ -66,10 +79,12 @@ export async function GET() {
       if (!albumMap[img.album]) albumMap[img.album] = []
       albumMap[img.album].push(img)
     }
-    const albums = Object.entries(albumMap).map(([name, images]) => ({
+
+    // Always show default albums, even if empty
+    const albums = DEFAULT_ALBUMS.map((name) => ({
       name,
-      count: images.length,
-      images,
+      count: albumMap[name]?.length || 0,
+      images: albumMap[name] || [],
     }))
 
     // Get all center info entries

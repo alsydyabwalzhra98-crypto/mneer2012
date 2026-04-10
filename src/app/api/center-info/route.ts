@@ -1,5 +1,7 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { writeFile, mkdir } from 'fs/promises'
+import path from 'path'
 
 // GET all center info
 export async function GET() {
@@ -13,9 +15,46 @@ export async function GET() {
   }
 }
 
-// POST create new info item
+// POST create new info item (supports JSON and FormData for image upload)
 export async function POST(request: Request) {
   try {
+    const contentType = request.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      // Handle file upload
+      const formData = await request.formData()
+      const key = formData.get('key') as string
+      const section = formData.get('section') as string || 'عام'
+      const file = formData.get('file') as File
+
+      if (!key || !file) {
+        return NextResponse.json({ error: 'المفتاح والصورة مطلوبان' }, { status: 400 })
+      }
+
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      const base64 = buffer.toString('base64')
+      const mimeType = file.type || 'image/jpeg'
+      const dataUrl = `data:${mimeType};base64,${base64}`
+
+      const filename = `center-${Date.now()}-${file.name}`
+
+      // Also save locally
+      try {
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+        await mkdir(uploadDir, { recursive: true })
+        await writeFile(path.join(uploadDir, filename), buffer)
+      } catch {
+        // ignore
+      }
+
+      const info = await db.centerInfo.create({
+        data: { key, value: dataUrl, type: 'image', section }
+      })
+      return NextResponse.json(info, { status: 201 })
+    }
+
+    // Handle JSON body
     const body = await request.json()
     const { key, value, type, section } = body
     if (!key || !value) {
@@ -24,15 +63,53 @@ export async function POST(request: Request) {
     const info = await db.centerInfo.create({
       data: { key, value, type: type || 'text', section: section || 'عام' }
     })
-    return NextResponse.json(info)
+    return NextResponse.json(info, { status: 201 })
   } catch (error) {
     return NextResponse.json({ error: 'فشل في إنشاء العنصر' }, { status: 500 })
   }
 }
 
-// PUT update info item
+// PUT update info item (supports JSON and FormData)
 export async function PUT(request: Request) {
   try {
+    const contentType = request.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      const id = formData.get('id') as string
+      const key = formData.get('key') as string
+      const section = formData.get('section') as string || 'عام'
+      const file = formData.get('file') as File
+
+      if (!id) {
+        return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 })
+      }
+
+      if (file) {
+        const bytes = await file.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+        const base64 = buffer.toString('base64')
+        const mimeType = file.type || 'image/jpeg'
+        const dataUrl = `data:${mimeType};base64,${base64}`
+
+        const info = await db.centerInfo.update({
+          where: { id },
+          data: { key, value: dataUrl, type: 'image', section }
+        })
+        return NextResponse.json(info)
+      }
+
+      // No file, just update text fields
+      const value = formData.get('value') as string || ''
+      const type = formData.get('type') as string || 'text'
+      const info = await db.centerInfo.update({
+        where: { id },
+        data: { key, value, type, section }
+      })
+      return NextResponse.json(info)
+    }
+
+    // Handle JSON body
     const body = await request.json()
     const { id, key, value, type, section } = body
     if (!id) {

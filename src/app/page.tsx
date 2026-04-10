@@ -263,6 +263,8 @@ export default function Home() {
     type: 'text',
     section: 'عام',
   })
+  const [centerInfoFile, setCenterInfoFile] = useState<File | null>(null)
+  const [centerInfoPreview, setCenterInfoPreview] = useState<string | null>(null)
   const [editingCenterInfo, setEditingCenterInfo] = useState<CenterInfoItem | null>(null)
   const [centerInfoDialogOpen, setCenterInfoDialogOpen] = useState(false)
 
@@ -447,16 +449,32 @@ export default function Home() {
 
   // ── CenterInfo CRUD ────────────────────────────────────────
   const createCenterInfo = async () => {
-    if (!centerInfoForm.key || !centerInfoForm.value) {
-      toast.error('المفتاح والقيمة مطلوبان')
+    if (!centerInfoForm.key) {
+      toast.error('المفتاح مطلوب')
       return
     }
     try {
-      const res = await fetch('/api/center-info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(centerInfoForm),
-      })
+      let res: Response
+      if (centerInfoForm.type === 'image' && centerInfoFile) {
+        const formData = new FormData()
+        formData.append('key', centerInfoForm.key)
+        formData.append('section', centerInfoForm.section)
+        formData.append('file', centerInfoFile)
+        res = await fetch('/api/center-info', { method: 'POST', body: formData })
+      } else if (centerInfoForm.type === 'image' && !centerInfoFile) {
+        toast.error('الرجاء اختيار صورة')
+        return
+      } else {
+        if (!centerInfoForm.value) {
+          toast.error('القيمة مطلوبة')
+          return
+        }
+        res = await fetch('/api/center-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(centerInfoForm),
+        })
+      }
       if (!res.ok) {
         const data = await res.json()
         toast.error(data.error || 'خطأ')
@@ -464,6 +482,8 @@ export default function Home() {
       }
       toast.success('تم إضافة العنصر بنجاح')
       setCenterInfoForm({ key: '', value: '', type: 'text', section: 'عام' })
+      setCenterInfoFile(null)
+      setCenterInfoPreview(null)
       loadCenterInfo()
     } catch {
       toast.error('خطأ في الاتصال')
@@ -473,11 +493,21 @@ export default function Home() {
   const updateCenterInfo = async () => {
     if (!editingCenterInfo) return
     try {
-      const res = await fetch('/api/center-info', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingCenterInfo.id, ...centerInfoForm }),
-      })
+      let res: Response
+      if (centerInfoFile) {
+        const formData = new FormData()
+        formData.append('id', editingCenterInfo.id)
+        formData.append('key', centerInfoForm.key)
+        formData.append('section', centerInfoForm.section)
+        formData.append('file', centerInfoFile)
+        res = await fetch('/api/center-info', { method: 'PUT', body: formData })
+      } else {
+        res = await fetch('/api/center-info', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingCenterInfo.id, ...centerInfoForm }),
+        })
+      }
       if (!res.ok) {
         const data = await res.json()
         toast.error(data.error || 'خطأ')
@@ -487,6 +517,8 @@ export default function Home() {
       setEditingCenterInfo(null)
       setCenterInfoDialogOpen(false)
       setCenterInfoForm({ key: '', value: '', type: 'text', section: 'عام' })
+      setCenterInfoFile(null)
+      setCenterInfoPreview(null)
       loadCenterInfo()
     } catch {
       toast.error('خطأ في الاتصال')
@@ -516,6 +548,8 @@ export default function Home() {
       type: item.type,
       section: item.section,
     })
+    setCenterInfoFile(null)
+    setCenterInfoPreview(item.type === 'image' ? item.value : null)
     setCenterInfoDialogOpen(true)
   }
 
@@ -961,11 +995,6 @@ export default function Home() {
                 )}
               </Button>
             </form>
-            <div className="mt-5 p-3 rounded-lg text-center" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-              <p className="text-xs font-semibold" style={{ color: '#166534' }}>بيانات الدخول:</p>
-              <p className="text-xs mt-1" style={{ color: '#15803d' }}>المدير: admin / admin123</p>
-              <p className="text-xs" style={{ color: '#15803d' }}>العرض العام: public / public123</p>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -1148,6 +1177,10 @@ export default function Home() {
             onUpdate={updateCenterInfo}
             onDelete={deleteCenterInfo}
             onEdit={openEditCenterInfo}
+            file={centerInfoFile}
+            setFile={setCenterInfoFile}
+            preview={centerInfoPreview}
+            setPreview={setCenterInfoPreview}
           />
         )}
       </main>
@@ -2692,6 +2725,10 @@ function CenterInfoTab({
   onUpdate,
   onDelete,
   onEdit,
+  file,
+  setFile,
+  preview,
+  setPreview,
 }: {
   items: CenterInfoItem[]
   form: { key: string; value: string; type: string; section: string }
@@ -2703,6 +2740,10 @@ function CenterInfoTab({
   onUpdate: () => void
   onDelete: (id: string) => void
   onEdit: (item: CenterInfoItem) => void
+  file: File | null
+  setFile: (f: File | null) => void
+  preview: string | null
+  setPreview: (p: string | null) => void
 }) {
   const typeBadgeColors: Record<string, string> = {
     text: 'bg-gray-100 text-gray-700',
@@ -2745,19 +2786,13 @@ function CenterInfoTab({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>القيمة *</Label>
-              <Input
-                placeholder={form.type === 'image' ? 'رابط الصورة' : form.type === 'link' ? 'الرابط' : 'النص'}
-                value={form.value}
-                onChange={(e) => setForm({ ...form, value: e.target.value })}
-                className="text-right"
-              />
-            </div>
-            <div className="space-y-2">
               <Label className="text-sm" style={{ color: '#1a5f4a' }}>النوع</Label>
               <Select
                 value={form.type}
-                onValueChange={(v) => setForm({ ...form, type: v })}
+                onValueChange={(v) => {
+                  setForm({ ...form, type: v })
+                  if (v !== 'image') { setFile(null); setPreview(null) }
+                }}
               >
                 <SelectTrigger className="text-right">
                   <SelectValue />
@@ -2788,6 +2823,70 @@ function CenterInfoTab({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              {form.type === 'image' ? (
+                <>
+                  <Label className="text-sm" style={{ color: '#1a5f4a' }}>الصورة *</Label>
+                  <div
+                    className="relative border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors hover:border-emerald-400 hover:bg-emerald-50/50"
+                    style={{ borderColor: preview ? '#059669' : '#d1d5db', minHeight: '80px' }}
+                    onClick={() => document.getElementById('center-info-file')?.click()}
+                  >
+                    {preview ? (
+                      <div className="flex items-center gap-3 p-2">
+                        <img src={preview} alt="معاينة" className="w-14 h-14 rounded-lg object-cover" />
+                        <div className="text-right">
+                          <p className="text-xs font-semibold" style={{ color: '#059669' }}>{file?.name}</p>
+                          <p className="text-[10px]" style={{ color: '#9ca3af' }}>اضغط لتغيير الصورة</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 mb-1" style={{ color: '#9ca3af' }} />
+                        <p className="text-xs font-semibold" style={{ color: '#6b7280' }}>اضغط لاختيار صورة</p>
+                        <p className="text-[10px]" style={{ color: '#9ca3af' }}>JPG, PNG, GIF</p>
+                      </>
+                    )}
+                    <input
+                      id="center-info-file"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const selected = e.target.files?.[0]
+                        if (selected) {
+                          setFile(selected)
+                          const reader = new FileReader()
+                          reader.onload = (ev) => setPreview(ev.target?.result as string)
+                          reader.readAsDataURL(selected)
+                        }
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Label className="text-sm" style={{ color: '#1a5f4a' }}>القيمة *</Label>
+                  {form.type === 'link' ? (
+                    <Input
+                      placeholder="https://..."
+                      value={form.value}
+                      onChange={(e) => setForm({ ...form, value: e.target.value })}
+                      className="text-right"
+                      dir="ltr"
+                    />
+                  ) : (
+                    <Textarea
+                      placeholder="أدخل النص هنا"
+                      value={form.value}
+                      onChange={(e) => setForm({ ...form, value: e.target.value })}
+                      className="text-right"
+                      rows={2}
+                    />
+                  )}
+                </>
+              )}
             </div>
           </div>
           <Button
@@ -2904,15 +3003,56 @@ function CenterInfoTab({
                 className="text-right"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm" style={{ color: '#1a5f4a' }}>القيمة *</Label>
-              <Textarea
-                value={form.value}
-                onChange={(e) => setForm({ ...form, value: e.target.value })}
-                className="text-right"
-                rows={3}
-              />
-            </div>
+            {form.type === 'image' ? (
+              <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>الصورة</Label>
+                <div
+                  className="relative border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors hover:border-emerald-400 hover:bg-emerald-50/50"
+                  style={{ borderColor: preview ? '#059669' : '#d1d5db', minHeight: '100px' }}
+                  onClick={() => document.getElementById('edit-center-info-file')?.click()}
+                >
+                  {preview ? (
+                    <div className="flex items-center gap-3 p-2">
+                      <img src={preview} alt="معاينة" className="w-16 h-16 rounded-lg object-cover" />
+                      <div className="text-right">
+                        <p className="text-xs font-semibold" style={{ color: '#059669' }}>{file?.name || 'الصورة الحالية'}</p>
+                        <p className="text-[10px]" style={{ color: '#9ca3af' }}>اضغط لتغيير الصورة</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mb-1" style={{ color: '#9ca3af' }} />
+                      <p className="text-xs font-semibold" style={{ color: '#6b7280' }}>اضغط لاختيار صورة</p>
+                    </>
+                  )}
+                  <input
+                    id="edit-center-info-file"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const selected = e.target.files?.[0]
+                      if (selected) {
+                        setFile(selected)
+                        const reader = new FileReader()
+                        reader.onload = (ev) => setPreview(ev.target?.result as string)
+                        reader.readAsDataURL(selected)
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>القيمة *</Label>
+                <Textarea
+                  value={form.value}
+                  onChange={(e) => setForm({ ...form, value: e.target.value })}
+                  className="text-right"
+                  rows={3}
+                />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm" style={{ color: '#1a5f4a' }}>النوع</Label>

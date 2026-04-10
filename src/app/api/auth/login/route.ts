@@ -30,8 +30,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Determine role: public user gets viewer role, everyone else gets admin role
-    const role = username === 'public' ? 'viewer' : 'admin'
+    // Determine role: Hi user gets viewer role, everyone else gets admin role
+    const role = username === 'Hi' ? 'viewer' : 'admin'
 
     return NextResponse.json({
       id: admin.id,
