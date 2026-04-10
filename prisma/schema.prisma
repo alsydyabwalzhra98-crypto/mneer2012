@@ -1,10 +1,10 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 model Admin {
@@ -65,7 +65,7 @@ model MediaImage {
   id        String   @id @default(cuid())
   album     String
   filename  String
-  url       String   @db.Text
+  url       String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -73,7 +73,7 @@ model MediaImage {
 model Activity {
   id          String   @id @default(cuid())
   title       String
-  description String?  @db.Text
+  description String?
   date        String
   type        String   @default("عامة")
   createdAt   DateTime @default(now())
@@ -83,7 +83,7 @@ model Activity {
 model CenterInfo {
   id        String   @id @default(cuid())
   key       String   @unique
-  value     String   @db.Text
+  value     String
   type      String   @default("text")
   section   String   @default("عام")
   createdAt DateTime @default(now())
