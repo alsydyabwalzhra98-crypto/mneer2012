@@ -24,16 +24,19 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Create Android WebView App
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+
+      - name: Create Android Project
         run: |
           mkdir -p app-android/app/src/main/java/com/alshifa/quran
           mkdir -p app-android/app/src/main/res/values
           mkdir -p app-android/app/src/main/res/mipmap-hdpi
 
-          # MainActivity.java
           cat > app-android/app/src/main/java/com/alshifa/quran/MainActivity.java << 'JAVA'
           package com.alshifa.quran;
-          
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebView;
@@ -43,68 +46,43 @@ jobs:
           import android.view.Window;
           import android.view.WindowManager;
           import android.graphics.Color;
-
           public class MainActivity extends Activity {
               private WebView webView;
-              
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   requestWindowFeature(Window.FEATURE_NO_TITLE);
-                  getWindow().setFlags(
-                      WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                      WindowManager.LayoutParams.FLAG_FULLSCREEN
-                  );
+                  getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                   getWindow().setStatusBarColor(Color.parseColor("#0d3d2e"));
-                  
                   webView = new WebView(this);
                   setContentView(webView);
-                  
-                  WebSettings settings = webView.getSettings();
-                  settings.setJavaScriptEnabled(true);
-                  settings.setDomStorageEnabled(true);
-                  settings.setAllowFileAccess(true);
-                  settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-                  settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-                  settings.setSupportZoom(false);
-                  settings.setUseWideViewPort(true);
-                  settings.setLoadWithOverviewMode(true);
-                  
+                  WebSettings s = webView.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setAllowFileAccess(true);
+                  s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                  s.setSupportZoom(false);
+                  s.setUseWideViewPort(true);
+                  s.setLoadWithOverviewMode(true);
                   webView.setWebViewClient(new WebViewClient());
                   webView.setWebChromeClient(new WebChromeClient());
                   webView.setBackgroundColor(Color.WHITE);
                   webView.loadUrl("https://mneer2012.vercel.app");
               }
-              
               @Override
               public void onBackPressed() {
-                  if (webView.canGoBack()) {
-                      webView.goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
+                  if (webView.canGoBack()) { webView.goBack(); } else { super.onBackPressed(); }
               }
           }
           JAVA
 
-          # AndroidManifest.xml
           cat > app-android/app/src/main/AndroidManifest.xml << 'XML'
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.alshifa.quran">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.alshifa.quran">
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-              <application
-                  android:allowBackup="true"
-                  android:label="مركز الشفاء"
-                  android:icon="@mipmap/ic_launcher"
-                  android:theme="@style/AppTheme"
-                  android:usesCleartextTraffic="true">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:configChanges="orientation|screenSize|keyboard"
-                      android:windowSoftInputMode="adjustResize">
+              <application android:allowBackup="true" android:label="مركز الشفاء" android:theme="@style/AppTheme" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboard" android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -114,51 +92,26 @@ jobs:
           </manifest>
           XML
 
-          # styles.xml
           cat > app-android/app/src/main/res/values/styles.xml << 'XML'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="android:Theme.DeviceDefault.Light.NoActionBar">
                   <item name="android:statusBarColor">#0d3d2e</item>
-                  <item name="android:navigationBarColor">#0d3d2e</item>
               </style>
           </resources>
           XML
 
-          # strings.xml
           cat > app-android/app/src/main/res/values/strings.xml << 'XML'
           <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="app_name">مركز الشفاء</string>
-          </resources>
+          <resources><string name="app_name">مركز الشفاء</string></resources>
           XML
 
-          # colors.xml
-          cat > app-android/app/src/main/res/values/colors.xml << 'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="icon_background">#0d3d2e</color>
-              <color name="icon_foreground">#d4af37</color>
-          </resources>
-          XML
-
-          # launcher icon
-          cat > app-android/app/src/main/res/mipmap-hdpi/ic_launcher.xml << 'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/icon_background"/>
-              <foreground android:drawable="@color/icon_foreground"/>
-          </adaptive-icon>
-          XML
-
-          # build.gradle (project)
           cat > app-android/build.gradle << 'GRADLE'
           plugins {
               id 'com.android.application' version '8.1.4' apply false
           }
           GRADLE
 
-          # settings.gradle
           cat > app-android/settings.gradle << 'GRADLE'
           pluginManagement {
               repositories {
@@ -171,12 +124,10 @@ jobs:
           include ':app'
           GRADLE
 
-          # build.gradle (app)
           cat > app-android/app/build.gradle << 'GRADLE'
           plugins {
               id 'com.android.application'
           }
-          
           android {
               namespace 'com.alshifa.quran'
               compileSdk 34
@@ -188,9 +139,7 @@ jobs:
                   versionName "1.0"
               }
               buildTypes {
-                  release {
-                      minifyEnabled false
-                  }
+                  release { minifyEnabled false }
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -199,24 +148,11 @@ jobs:
           }
           GRADLE
 
-          # proguard
           echo "" > app-android/app/proguard-rules.pro
-
-          # gradle wrapper with fixed version
-          mkdir -p app-android/gradle/wrapper
-          
-          # Download gradle 8.4 directly
-          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /tmp/
-          /tmp/gradle-8.4/bin/gradle wrapper --gradle-version 8.4
-          mv gradlew gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties app-android/
-          rm -rf /tmp/gradle* /tmp/gradle.zip
 
       - name: Build APK
         working-directory: app-android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
