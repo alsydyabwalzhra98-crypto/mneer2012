@@ -53,9 +53,14 @@ jobs:
 
       - name: Copy build to web dir
         run: |
-          mkdir -p android/app/src/main/assets/public
-          cp -r public/* android/app/src/main/assets/public/
-          cp -r .next/static android/app/src/main/assets/public/_next/static
+          mkdir -p android/app/src/main/assets/public/_next/static
+          cp -r public/* android/app/src/main/assets/public/ || true
+          if [ -d ".next/static" ]; then
+            cp -r .next/static/* android/app/src/main/assets/public/_next/static/
+          fi
+          if [ -d ".next/server" ]; then
+            cp -r .next/server/* android/app/src/main/assets/public/_next/server/
+          fi
 
       - name: Build Debug APK
         working-directory: android
