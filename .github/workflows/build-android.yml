@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '22' # تأكد من وضعها بين علامات تنصيص
+  NODE_VERSION: '22'
   JAVA_VERSION: '17'
 
 jobs:
@@ -19,7 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # خطوة إضافية لضمان تثبيت Node 22 بشكل صحيح في النظام
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -52,9 +51,8 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-       - name: Install Capacitor and Android
+      - name: Install Capacitor and Android
         run: bun add -D @capacitor/cli @capacitor/core @capacitor/android
-
 
       - name: Build Next.js static export
         run: bun run build:export
@@ -87,6 +85,5 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: "تطبيق مركز الشفاء v1.0.${{ github.run_number }}"
           body: |
-            ## مركز الشفاء لتحفيظ القرآن الكريم
-            ### الإصدار التجريبي
+            إصدار أندرويد لمركز الشفاء.
         continue-on-error: true
