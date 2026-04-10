@@ -151,3 +151,32 @@ Stage Summary:
 - Admin can manage center info (text, images, links) from new tab
 - Center info organized by sections in public display
 - ESLint: 0 errors, 2 warnings (non-blocking alt-text)
+
+---
+Task ID: 8
+Agent: main
+Task: Optimize project size - make app lightweight
+
+Work Log:
+- Analyzed project: 1.6GB total (1.2GB node_modules, 310MB .next, 67MB skills, 1.5MB public)
+- Removed 33 unused dependencies from package.json (framer-motion, recharts, @dnd-kit, next-auth, react-hook-form, zod, uuid, date-fns, next-themes, @mdxeditor, embla-carousel, react-day-picker, react-markdown, react-syntax-highlighter, react-resizable-panels, @tanstack/react-query, @tanstack/react-table, @reactuses, cmdk, vaul, input-otp, zustand, and 12 unused radix-ui packages)
+- Removed 33 unused UI component files (kept only 13 actually used: badge, button, card, dialog, input, label, progress(?), select, separator, skeleton, table, tabs, textarea)
+- Removed unused hooks (use-toast.ts, use-mobile.ts)
+- Removed duplicate icon PNGs (kept only 128x128, 144x144, 152x152, 192x192, 384x384, 512x512, 72x72, 96x96 versions)
+- Deleted entire skills/ directory (67MB) - contains 46 AI skill modules unrelated to the app
+- Deleted unused images: banner.png, center-logo-raw.png, icon.svg, logo.svg
+- Compressed all remaining PNGs with sharp (palette compression): 484KB → 254KB (47% reduction)
+- Updated layout.tsx to use sonner Toaster directly (removed dependency on toaster.tsx and use-toast.ts)
+- Clean reinstall: node_modules went from 1.2GB → 905MB
+- Public folder: 1.5MB → 348KB (77% reduction)
+- Total non-node_modules project: ~36MB → much smaller for GitHub transfer
+- Verified: bun run lint passes with 0 errors, 2 warnings (alt-text only)
+- Removed sharp from dependencies (moved to devDependencies)
+
+Stage Summary:
+- Removed 33+ unused npm packages
+- Deleted 67MB skills/ directory entirely
+- Compressed all images by ~47%
+- node_modules: 1.2GB → 905MB
+- public/: 1.5MB → 348KB
+- Project is significantly lighter for GitHub upload and APK building
