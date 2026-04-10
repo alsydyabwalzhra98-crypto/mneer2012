@@ -214,7 +214,7 @@ export default function PublicDisplayView({ onLogout }: { onLogout: () => void }
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <img src="/center-logo.png" alt="مركز الشفاء" className="w-8 h-8 rounded-full object-cover" style={{ border: '2px solid #d4af37' }} />
+              <img src="/center-logo.png" alt="مركز الشفاء" className="w-9 h-9 object-contain" style={{ filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.5))' }} />
               <div>
                 <h1 className="text-base font-bold text-white leading-tight">مركز الشفاء</h1>
                 <p className="text-[10px] leading-tight" style={{ color: '#d4af37' }}>لتحفيظ القرآن الكريم</p>
@@ -244,7 +244,7 @@ export default function PublicDisplayView({ onLogout }: { onLogout: () => void }
           <img src="/banner.png" alt="مركز الشفاء" className="w-full h-48 sm:h-64 object-cover" />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(13,61,46,0.3), rgba(13,61,46,0.85))' }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-            <img src="/center-logo.png" alt="مركز الشفاء" className="w-20 h-20 rounded-full object-cover mb-3 shadow-lg" style={{ border: '3px solid #d4af37' }} />
+            <img src="/center-logo.png" alt="مركز الشفاء" className="w-24 h-24 sm:w-28 sm:h-28 object-contain mb-3 shadow-lg" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }} />
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-cairo)' }}>
               مركز الشفاء لتحفيظ القرآن الكريم
             </h2>

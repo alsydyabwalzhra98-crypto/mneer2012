@@ -882,7 +882,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f9fa' }}>
         <div className="text-center space-y-4">
-          <img src="/center-logo.png" alt="مركز الشفاء" className="w-16 h-16 mx-auto rounded-full object-cover" />
+          <img src="/center-logo.png" alt="مركز الشفاء" className="w-20 h-20 mx-auto object-contain" />
           <Skeleton className="h-6 w-48 mx-auto" />
           <Skeleton className="h-4 w-32 mx-auto" />
         </div>
@@ -901,8 +901,8 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f8f9fa' }}>
         <Card className="w-full max-w-md shadow-2xl border-0" style={{ borderRadius: '1.2rem' }}>
           <CardHeader className="text-center pb-2 pt-8">
-            <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg overflow-hidden">
-              <img src="/center-logo.png" alt="مركز الشفاء" className="w-full h-full object-cover" />
+            <div className="mx-auto mb-4">
+              <img src="/center-logo.png" alt="مركز الشفاء" className="w-28 h-28 mx-auto object-contain" />
             </div>
             <CardTitle className="text-3xl font-bold" style={{ color: '#1a5f4a', fontFamily: 'var(--font-cairo)' }}>
               مركز الشفاء
@@ -994,7 +994,7 @@ export default function Home() {
           {/* Top bar */}
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <img src="/center-logo.png" alt="مركز الشفاء" className="w-8 h-8 rounded-full object-cover" style={{ border: '2px solid #d4af37' }} />
+              <img src="/center-logo.png" alt="مركز الشفاء" className="w-9 h-9 object-contain" style={{ filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.5))' }} />
               <h1 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-cairo)' }}>
                 مركز الشفاء
               </h1>
