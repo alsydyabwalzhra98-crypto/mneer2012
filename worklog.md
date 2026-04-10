@@ -121,3 +121,33 @@ Stage Summary:
 - Complete guide for database connection (Supabase/Neon)
 - GitHub Actions setup and APK download instructions
 - Local Android development with Capacitor documented
+
+---
+Task ID: 7
+Agent: main + full-stack-developer
+Task: UI improvements, logo update, authentication changes, center info feature
+
+Work Log:
+- Generated new Islamic center logo (center-logo.png) using AI image generation
+- Replaced BookOpen icon with center-logo.png across: loading screen, login page, admin navbar, hero banner
+- Added CenterInfo model to Prisma schema (key, value, type, section)
+- Created /api/center-info CRUD route (GET, POST, PUT, DELETE)
+- Updated /api/public to include media, centerInfo, attendanceStats
+- Updated /api/auth/login to return role field (admin/viewer)
+- Updated /api/auth/seed to seed public viewer user (public/public123)
+- Removed landing page view - now shows single login form with both credential sets
+- Implemented role-based routing: admin → dashboard, viewer → PublicDisplayView
+- Completely rewrote PublicDisplayView with 3 tabs: الحلقات, الوسائط, معلومات عامة
+- Added media gallery tab in public display
+- Added center info tab in public display (text/image/link support)
+- Added attendance stats (حاضرون اليوم) to public display stats
+- Added "معلومات المركز" tab to admin panel for managing center info
+- CenterInfo sections: عام, عن المركز, أوقات الدوام, تواصل
+
+Stage Summary:
+- Authentication: admin/admin123 (full access), public/public123 (view only)
+- No more landing page choice - single login form for both roles
+- Public display now shows media gallery, center info, attendance stats
+- Admin can manage center info (text, images, links) from new tab
+- Center info organized by sections in public display
+- ESLint: 0 errors, 2 warnings (non-blocking alt-text)

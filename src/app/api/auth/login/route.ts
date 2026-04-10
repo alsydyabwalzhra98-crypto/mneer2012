@@ -30,10 +30,14 @@ export async function POST(request: Request) {
       )
     }
 
+    // Determine role: public user gets viewer role, everyone else gets admin role
+    const role = username === 'public' ? 'viewer' : 'admin'
+
     return NextResponse.json({
       id: admin.id,
       username: admin.username,
-      name: admin.name
+      name: admin.name,
+      role,
     })
   } catch (error) {
     console.error('Login error:', error)

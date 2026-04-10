@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import LandingView from '@/components/LandingView'
 import PublicDisplayView from '@/components/PublicDisplayView'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -56,11 +55,8 @@ import {
   Star,
   TrendingUp,
   Award,
-  Eye,
-  ShieldCheck,
-  ChevronLeft,
-  ArrowRight,
   Image,
+  Info,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
@@ -118,6 +114,16 @@ interface Activity {
   createdAt: string
 }
 
+interface CenterInfoItem {
+  id: string
+  key: string
+  value: string
+  type: string
+  section: string
+  createdAt: string
+  updatedAt: string
+}
+
 interface DashboardStats {
   totalHalakat: number
   totalStudents: number
@@ -170,14 +176,21 @@ const CATEGORY_COLORS: Record<string, string> = {
   'محو الامية': 'bg-purple-100 text-purple-700',
 }
 
+const INFO_TYPES = [
+  { value: 'text', label: 'نص' },
+  { value: 'image', label: 'صورة' },
+  { value: 'link', label: 'رابط' },
+]
+
+const INFO_SECTIONS = ['عام', 'عن المركز', 'أوقات الدوام', 'تواصل']
+
 // ── Main Component ─────────────────────────────────────────────
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [loginLoading, setLoginLoading] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [viewMode, setViewMode] = useState<'landing' | 'login' | 'public'>('landing')
+  const [currentRole, setCurrentRole] = useState<'admin' | 'viewer' | null>(null)
 
   // Data states
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -187,6 +200,7 @@ export default function Home() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [mediaImages, setMediaImages] = useState<MediaImage[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
+  const [centerInfoItems, setCenterInfoItems] = useState<CenterInfoItem[]>([])
   const [dataLoading, setDataLoading] = useState(false)
 
   // Halaka form
@@ -238,6 +252,16 @@ export default function Home() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
   const [activityDialogOpen, setActivityDialogOpen] = useState(false)
 
+  // CenterInfo form
+  const [centerInfoForm, setCenterInfoForm] = useState({
+    key: '',
+    value: '',
+    type: 'text',
+    section: 'عام',
+  })
+  const [editingCenterInfo, setEditingCenterInfo] = useState<CenterInfoItem | null>(null)
+  const [centerInfoDialogOpen, setCenterInfoDialogOpen] = useState(false)
+
   // ── Auth ────────────────────────────────────────────────────
   useEffect(() => {
     const init = async () => {
@@ -251,9 +275,19 @@ export default function Home() {
       } catch {
         // ignore seed errors
       }
-      const token = localStorage.getItem('alshifa_auth')
-      if (token) {
-        setIsAuthenticated(true)
+      const stored = localStorage.getItem('alshifa_auth')
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          if (parsed.role === 'viewer') {
+            setCurrentRole('viewer')
+          } else {
+            setCurrentRole('admin')
+          }
+        } catch {
+          // invalid data, clear it
+          localStorage.removeItem('alshifa_auth')
+        }
       }
       setIsLoading(false)
     }
@@ -275,7 +309,7 @@ export default function Home() {
         return
       }
       localStorage.setItem('alshifa_auth', JSON.stringify(data))
-      setIsAuthenticated(true)
+      setCurrentRole(data.role || 'admin')
       toast.success(`مرحباً ${data.name}`)
     } catch {
       toast.error('حدث خطأ في الاتصال')
@@ -286,8 +320,10 @@ export default function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem('alshifa_auth')
-    setIsAuthenticated(false)
+    setCurrentRole(null)
     setActiveTab('dashboard')
+    setUsername('')
+    setPassword('')
     toast.success('تم تسجيل الخروج')
   }
 
@@ -369,6 +405,18 @@ export default function Home() {
     }
   }, [])
 
+  const loadCenterInfo = useCallback(async () => {
+    try {
+      const res = await fetch('/api/center-info')
+      if (res.ok) {
+        const data = await res.json()
+        setCenterInfoItems(data)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   const loadAllData = useCallback(async () => {
     setDataLoading(true)
     await Promise.all([
@@ -377,15 +425,90 @@ export default function Home() {
       loadStudents(),
       loadMedia(),
       loadActivities(),
+      loadCenterInfo(),
     ])
     setDataLoading(false)
-  }, [loadDashboard, loadHalakat, loadStudents, loadMedia, loadActivities])
+  }, [loadDashboard, loadHalakat, loadStudents, loadMedia, loadActivities, loadCenterInfo])
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (currentRole === 'admin') {
       loadAllData()
     }
-  }, [isAuthenticated, loadAllData])
+  }, [currentRole, loadAllData])
+
+  // ── CenterInfo CRUD ────────────────────────────────────────
+  const createCenterInfo = async () => {
+    if (!centerInfoForm.key || !centerInfoForm.value) {
+      toast.error('المفتاح والقيمة مطلوبان')
+      return
+    }
+    try {
+      const res = await fetch('/api/center-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(centerInfoForm),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        toast.error(data.error || 'خطأ')
+        return
+      }
+      toast.success('تم إضافة العنصر بنجاح')
+      setCenterInfoForm({ key: '', value: '', type: 'text', section: 'عام' })
+      loadCenterInfo()
+    } catch {
+      toast.error('خطأ في الاتصال')
+    }
+  }
+
+  const updateCenterInfo = async () => {
+    if (!editingCenterInfo) return
+    try {
+      const res = await fetch('/api/center-info', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingCenterInfo.id, ...centerInfoForm }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        toast.error(data.error || 'خطأ')
+        return
+      }
+      toast.success('تم تحديث العنصر بنجاح')
+      setEditingCenterInfo(null)
+      setCenterInfoDialogOpen(false)
+      setCenterInfoForm({ key: '', value: '', type: 'text', section: 'عام' })
+      loadCenterInfo()
+    } catch {
+      toast.error('خطأ في الاتصال')
+    }
+  }
+
+  const deleteCenterInfo = async (id: string) => {
+    try {
+      const res = await fetch(`/api/center-info?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        toast.error(data.error || 'خطأ')
+        return
+      }
+      toast.success('تم حذف العنصر بنجاح')
+      loadCenterInfo()
+    } catch {
+      toast.error('خطأ في الاتصال')
+    }
+  }
+
+  const openEditCenterInfo = (item: CenterInfoItem) => {
+    setEditingCenterInfo(item)
+    setCenterInfoForm({
+      key: item.key,
+      value: item.value,
+      type: item.type,
+      section: item.section,
+    })
+    setCenterInfoDialogOpen(true)
+  }
 
   // ── Halaka CRUD ────────────────────────────────────────────
   const createHalaka = async () => {
@@ -548,13 +671,13 @@ export default function Home() {
 
   // ── Attendance ─────────────────────────────────────────────
   useEffect(() => {
-    if (isAuthenticated && activeTab === 'attendance') {
+    if (currentRole === 'admin' && activeTab === 'attendance') {
       loadAttendance(attendanceDate, attendanceHalakaId || undefined)
     }
-  }, [isAuthenticated, activeTab, attendanceDate, attendanceHalakaId, loadAttendance])
+  }, [currentRole, activeTab, attendanceDate, attendanceHalakaId, loadAttendance])
 
   useEffect(() => {
-    if (isAuthenticated && activeTab === 'attendance' && attendanceHalakaId) {
+    if (currentRole === 'admin' && activeTab === 'attendance' && attendanceHalakaId) {
       const halakaStudents = students.filter((s) => s.halakaId === attendanceHalakaId)
       const existingMap = new Map(attendance.map((a) => [a.studentId, a]))
       const records = halakaStudents.map((s) => ({
@@ -566,7 +689,7 @@ export default function Home() {
     } else {
       setAttendanceRecords([])
     }
-  }, [attendanceHalakaId, students, attendance, isAuthenticated, activeTab])
+  }, [attendanceHalakaId, students, attendance, currentRole, activeTab])
 
   const updateAttendanceRecord = (studentId: string, field: 'status' | 'notes', value: string) => {
     setAttendanceRecords((prev) =>
@@ -605,10 +728,10 @@ export default function Home() {
 
   // ── Media CRUD ─────────────────────────────────────────────
   useEffect(() => {
-    if (isAuthenticated) {
+    if (currentRole === 'admin') {
       loadMedia(mediaFilter || undefined)
     }
-  }, [isAuthenticated, mediaFilter, loadMedia])
+  }, [currentRole, mediaFilter, loadMedia])
 
   const uploadMedia = async () => {
     if (!mediaAlbum || !mediaFile) {
@@ -750,9 +873,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f9fa' }}>
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)' }}>
-            <BookOpen className="w-8 h-8 text-white" />
-          </div>
+          <img src="/center-logo.png" alt="مركز الشفاء" className="w-16 h-16 mx-auto rounded-full object-cover" />
           <Skeleton className="h-6 w-48 mx-auto" />
           <Skeleton className="h-4 w-32 mx-auto" />
         </div>
@@ -760,102 +881,89 @@ export default function Home() {
     )
   }
 
-  // ── PUBLIC DISPLAY VIEW ─────────────────────────────────────
-  if (!isAuthenticated && viewMode === 'public') {
-    return <PublicDisplayView onBack={() => setViewMode('landing')} />
+  // ── VIEWER MODE (Public Display) ───────────────────────────
+  if (currentRole === 'viewer') {
+    return <PublicDisplayView onLogout={handleLogout} />
   }
 
-  // ── LANDING + LOGIN VIEW ────────────────────────────────────
-  if (!isAuthenticated) {
+  // ── LOGIN VIEW ─────────────────────────────────────────────
+  if (currentRole === null) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f8f9fa' }}>
-        {viewMode === 'landing' ? (
-          <LandingView onAdminLogin={() => setViewMode('login')} onPublicView={() => setViewMode('public')} />
-        ) : (
-          <Card className="w-full max-w-md shadow-2xl border-0" style={{ borderRadius: '1.2rem' }}>
-            <CardHeader className="text-center pb-2 pt-8">
-              <div
-                className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)' }}
-              >
-                <BookOpen className="w-10 h-10 text-white" />
+        <Card className="w-full max-w-md shadow-2xl border-0" style={{ borderRadius: '1.2rem' }}>
+          <CardHeader className="text-center pb-2 pt-8">
+            <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+              <img src="/center-logo.png" alt="مركز الشفاء" className="w-full h-full object-cover" />
+            </div>
+            <CardTitle className="text-3xl font-bold" style={{ color: '#1a5f4a', fontFamily: 'var(--font-cairo)' }}>
+              مركز الشفاء
+            </CardTitle>
+            <p className="text-sm mt-1" style={{ color: '#6b7280' }}>
+              لوحة التحكم الإدارية المتكاملة
+            </p>
+            <Separator className="my-4" />
+          </CardHeader>
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
+                  اسم المستخدم
+                </Label>
+                <Input
+                  id="username"
+                  placeholder="أدخل اسم المستخدم"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="h-11 text-right"
+                  style={{ borderColor: '#d1d5db' }}
+                />
               </div>
-              <CardTitle className="text-3xl font-bold" style={{ color: '#1a5f4a', fontFamily: 'var(--font-cairo)' }}>
-                مركز الشفاء
-              </CardTitle>
-              <p className="text-sm mt-1" style={{ color: '#6b7280' }}>
-                لوحة التحكم الإدارية المتكاملة
-              </p>
-              <Separator className="my-4" />
-            </CardHeader>
-            <CardContent className="px-8 pb-8">
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
-                    اسم المستخدم
-                  </Label>
-                  <Input
-                    id="username"
-                    placeholder="أدخل اسم المستخدم"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="h-11 text-right"
-                    style={{ borderColor: '#d1d5db' }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
-                    كلمة المرور
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="أدخل كلمة المرور"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 text-right"
-                    style={{ borderColor: '#d1d5db' }}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-lg font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    background: 'linear-gradient(135deg, #d4af37, #f4d03f)',
-                    color: '#0d3d2e',
-                    border: 'none',
-                  }}
-                  disabled={loginLoading}
-                >
-                  {loginLoading ? (
-                    <span className="flex items-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      جاري تسجيل الدخول...
-                    </span>
-                  ) : (
-                    'تسجيل الدخول'
-                  )}
-                </Button>
-              </form>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-semibold" style={{ color: '#1a5f4a' }}>
+                  كلمة المرور
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="أدخل كلمة المرور"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 text-right"
+                  style={{ borderColor: '#d1d5db' }}
+                />
+              </div>
               <Button
-                variant="ghost"
-                className="w-full mt-3 text-sm"
-                style={{ color: '#6b7280' }}
-                onClick={() => setViewMode('landing')}
+                type="submit"
+                className="w-full h-12 text-lg font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #d4af37, #f4d03f)',
+                  color: '#0d3d2e',
+                  border: 'none',
+                }}
+                disabled={loginLoading}
               >
-                رجوع للصفحة الرئيسية
+                {loginLoading ? (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    جاري تسجيل الدخول...
+                  </span>
+                ) : (
+                  'تسجيل الدخول'
+                )}
               </Button>
-              <p className="text-xs text-center mt-4" style={{ color: '#9ca3af' }}>
-                بيانات الدخول الافتراضية: admin / admin123
-              </p>
-            </CardContent>
-          </Card>
-        )}
+            </form>
+            <div className="mt-5 p-3 rounded-lg text-center" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <p className="text-xs font-semibold" style={{ color: '#166534' }}>بيانات الدخول:</p>
+              <p className="text-xs mt-1" style={{ color: '#15803d' }}>المدير: admin / admin123</p>
+              <p className="text-xs" style={{ color: '#15803d' }}>العرض العام: public / public123</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  // ── MAIN APP VIEW ──────────────────────────────────────────
+  // ── MAIN APP VIEW (Admin) ──────────────────────────────────
   const navTabs = [
     { value: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
     { value: 'halakat', label: 'الحلقات', icon: BookOpen },
@@ -863,6 +971,7 @@ export default function Home() {
     { value: 'attendance', label: 'الحضور', icon: ClipboardCheck },
     { value: 'media', label: 'الوسائط', icon: Camera },
     { value: 'activities', label: 'الأنشطة', icon: Calendar },
+    { value: 'centerinfo', label: 'معلومات المركز', icon: Info },
   ]
 
   return (
@@ -876,7 +985,7 @@ export default function Home() {
           {/* Top bar */}
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <BookOpen className="w-6 h-6" style={{ color: '#d4af37' }} />
+              <img src="/center-logo.png" alt="مركز الشفاء" className="w-8 h-8 rounded-full object-cover" style={{ border: '2px solid #d4af37' }} />
               <h1 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-cairo)' }}>
                 مركز الشفاء
               </h1>
@@ -1016,6 +1125,22 @@ export default function Home() {
             formatDate={formatDate}
           />
         )}
+
+        {/* Center Info Tab */}
+        {activeTab === 'centerinfo' && (
+          <CenterInfoTab
+            items={centerInfoItems}
+            form={centerInfoForm}
+            setForm={setCenterInfoForm}
+            editingItem={editingCenterInfo}
+            dialogOpen={centerInfoDialogOpen}
+            setDialogOpen={setCenterInfoDialogOpen}
+            onCreate={createCenterInfo}
+            onUpdate={updateCenterInfo}
+            onDelete={deleteCenterInfo}
+            onEdit={openEditCenterInfo}
+          />
+        )}
       </main>
 
       {/* ── Footer ────────────────────────────────────────── */}
@@ -1084,11 +1209,8 @@ function DashboardTab({
       <Card className="border-0 shadow-md" style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)', borderRadius: '1rem' }}>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}
-            >
-              <GraduationCap className="w-7 h-7" style={{ color: '#0d3d2e' }} />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ border: '2px solid #d4af37' }}>
+              <img src="/center-logo.png" alt="مركز الشفاء" className="w-full h-full object-cover" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">مرحباً بك في مركز الشفاء</h2>
@@ -1195,7 +1317,6 @@ function DashboardTab({
             </div>
           ) : stats ? (
             <div className="space-y-3">
-              {/* Recent Students */}
               {stats.recentStudents.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold mb-2" style={{ color: '#6b7280' }}>
@@ -1216,7 +1337,6 @@ function DashboardTab({
                   </div>
                 </div>
               )}
-              {/* Recent Halakat */}
               {stats.recentHalakat.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold mb-2" style={{ color: '#6b7280' }}>
@@ -1237,7 +1357,6 @@ function DashboardTab({
                   </div>
                 </div>
               )}
-              {/* Recent Activities */}
               {stats.recentActivities.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold mb-2" style={{ color: '#6b7280' }}>
@@ -2014,7 +2133,6 @@ function AttendanceTab({
         </CardContent>
       </Card>
 
-      {/* Attendance Table */}
       {attendanceHalakaId && (
         <Card className="border-0 shadow-sm" style={{ borderRadius: '0.8rem' }}>
           <CardHeader className="pb-3">
@@ -2136,7 +2254,6 @@ function MediaTab({
 }) {
   return (
     <div className="space-y-6">
-      {/* Upload Form */}
       <Card className="border-0 shadow-sm" style={{ borderRadius: '0.8rem' }}>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2" style={{ color: '#1a5f4a' }}>
@@ -2334,7 +2451,6 @@ function ActivitiesTab({
 
   return (
     <div className="space-y-6">
-      {/* Add Activity Form */}
       <Card className="border-0 shadow-sm" style={{ borderRadius: '0.8rem' }}>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2" style={{ color: '#1a5f4a' }}>
@@ -2404,7 +2520,6 @@ function ActivitiesTab({
         </CardContent>
       </Card>
 
-      {/* Activities List */}
       <Card className="border-0 shadow-sm" style={{ borderRadius: '0.8rem' }}>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold" style={{ color: '#1a5f4a' }}>
@@ -2474,7 +2589,6 @@ function ActivitiesTab({
         </CardContent>
       </Card>
 
-      {/* Edit Activity Dialog */}
       <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
         <DialogContent className="sm:max-w-lg" style={{ borderRadius: '0.8rem' }}>
           <DialogHeader>
@@ -2545,6 +2659,304 @@ function ActivitiesTab({
               <Button
                 variant="outline"
                 onClick={() => setActivityDialogOpen(false)}
+                className="flex-1"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+// ── Center Info Tab Component ──────────────────────────────────
+function CenterInfoTab({
+  items,
+  form,
+  setForm,
+  editingItem,
+  dialogOpen,
+  setDialogOpen,
+  onCreate,
+  onUpdate,
+  onDelete,
+  onEdit,
+}: {
+  items: CenterInfoItem[]
+  form: { key: string; value: string; type: string; section: string }
+  setForm: (f: { key: string; value: string; type: string; section: string }) => void
+  editingItem: CenterInfoItem | null
+  dialogOpen: boolean
+  setDialogOpen: (o: boolean) => void
+  onCreate: () => void
+  onUpdate: () => void
+  onDelete: (id: string) => void
+  onEdit: (item: CenterInfoItem) => void
+}) {
+  const typeBadgeColors: Record<string, string> = {
+    text: 'bg-gray-100 text-gray-700',
+    image: 'bg-emerald-100 text-emerald-700',
+    link: 'bg-cyan-100 text-cyan-700',
+  }
+
+  const typeLabels: Record<string, string> = {
+    text: 'نص',
+    image: 'صورة',
+    link: 'رابط',
+  }
+
+  // Group items by section
+  const itemsBySection = items.reduce<Record<string, CenterInfoItem[]>>((acc, item) => {
+    if (!acc[item.section]) acc[item.section] = []
+    acc[item.section].push(item)
+    return acc
+  }, {})
+
+  return (
+    <div className="space-y-6">
+      {/* Add Form */}
+      <Card className="border-0 shadow-sm" style={{ borderRadius: '0.8rem' }}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold flex items-center gap-2" style={{ color: '#1a5f4a' }}>
+            <Plus className="w-5 h-5" style={{ color: '#d4af37' }} />
+            إضافة معلومة جديدة
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>المفتاح *</Label>
+              <Input
+                placeholder="مثال: رقم الهاتف"
+                value={form.key}
+                onChange={(e) => setForm({ ...form, key: e.target.value })}
+                className="text-right"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>القيمة *</Label>
+              <Input
+                placeholder={form.type === 'image' ? 'رابط الصورة' : form.type === 'link' ? 'الرابط' : 'النص'}
+                value={form.value}
+                onChange={(e) => setForm({ ...form, value: e.target.value })}
+                className="text-right"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>النوع</Label>
+              <Select
+                value={form.type}
+                onValueChange={(v) => setForm({ ...form, type: v })}
+              >
+                <SelectTrigger className="text-right">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INFO_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>القسم</Label>
+              <Select
+                value={form.section}
+                onValueChange={(v) => setForm({ ...form, section: v })}
+              >
+                <SelectTrigger className="text-right">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INFO_SECTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button
+            onClick={onCreate}
+            className="mt-4 font-semibold shadow-md"
+            style={{
+              background: 'linear-gradient(135deg, #d4af37, #f4d03f)',
+              color: '#0d3d2e',
+            }}
+          >
+            <Plus className="w-4 h-4 ml-1" />
+            إضافة
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Info List by Section */}
+      {Object.entries(itemsBySection).map(([section, sectionItems]) => (
+        <Card key={section} className="border-0 shadow-sm" style={{ borderRadius: '0.8rem' }}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-bold flex items-center gap-2" style={{ color: '#1a5f4a' }}>
+              <Info className="w-5 h-5" style={{ color: '#d4af37' }} />
+              {section} ({sectionItems.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sectionItems.length === 0 ? (
+              <p className="text-sm text-center py-4" style={{ color: '#9ca3af' }}>لا توجد معلومات في هذا القسم</p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border" style={{ borderColor: '#e5e7eb' }}>
+                <Table>
+                  <TableHeader>
+                    <TableRow style={{ background: 'linear-gradient(135deg, #1a5f4a, #0d3d2e)' }}>
+                      <TableHead className="text-white font-semibold text-sm">المفتاح</TableHead>
+                      <TableHead className="text-white font-semibold text-sm">القيمة</TableHead>
+                      <TableHead className="text-white font-semibold text-sm hidden sm:table-cell">النوع</TableHead>
+                      <TableHead className="text-white font-semibold text-sm text-center">إجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sectionItems.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-gray-50">
+                        <TableCell className="font-semibold text-sm">{item.key}</TableCell>
+                        <TableCell className="text-sm max-w-xs">
+                          {item.type === 'image' ? (
+                            <div className="flex items-center gap-2">
+                              <img src={item.value} alt={item.key} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                              <span className="truncate text-xs" style={{ color: '#6b7280' }}>{item.value}</span>
+                            </div>
+                          ) : (
+                            <span className="truncate">{item.value}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge className={`text-xs ${typeBadgeColors[item.type] || ''}`}>
+                            {typeLabels[item.type] || item.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onEdit(item)}
+                              className="h-8 w-8 p-0"
+                              style={{ color: '#d4af37' }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('هل أنت متأكد من حذف هذا العنصر؟')) onDelete(item.id)
+                              }}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+
+      {items.length === 0 && (
+        <div className="text-center py-10" style={{ color: '#9ca3af' }}>
+          <Info className="w-12 h-12 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">لا توجد معلومات عن المركز بعد</p>
+        </div>
+      )}
+
+      {/* Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg" style={{ borderRadius: '0.8rem' }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2" style={{ color: '#1a5f4a' }}>
+              <Pencil className="w-5 h-5" style={{ color: '#d4af37' }} />
+              تعديل المعلومة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>المفتاح *</Label>
+              <Input
+                value={form.key}
+                onChange={(e) => setForm({ ...form, key: e.target.value })}
+                className="text-right"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm" style={{ color: '#1a5f4a' }}>القيمة *</Label>
+              <Textarea
+                value={form.value}
+                onChange={(e) => setForm({ ...form, value: e.target.value })}
+                className="text-right"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>النوع</Label>
+                <Select
+                  value={form.type}
+                  onValueChange={(v) => setForm({ ...form, type: v })}
+                >
+                  <SelectTrigger className="text-right">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INFO_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm" style={{ color: '#1a5f4a' }}>القسم</Label>
+                <Select
+                  value={form.section}
+                  onValueChange={(v) => setForm({ ...form, section: v })}
+                >
+                  <SelectTrigger className="text-right">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INFO_SECTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={onUpdate}
+                className="flex-1 font-semibold shadow-md"
+                style={{
+                  background: 'linear-gradient(135deg, #d4af37, #f4d03f)',
+                  color: '#0d3d2e',
+                }}
+              >
+                <Save className="w-4 h-4 ml-1" />
+                حفظ التعديلات
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
                 className="flex-1"
               >
                 إلغاء

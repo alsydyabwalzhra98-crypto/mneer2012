@@ -27,11 +27,6 @@ export async function GET() {
       _count: { id: true },
     })
 
-    const branchStudentCounts = await db.student.groupBy({
-      by: ['halakaId'],
-      _count: { id: true },
-    })
-
     // Get recent activities
     const activities = await db.activity.findMany({
       take: 6,
@@ -61,6 +56,29 @@ export async function GET() {
       studentsCount: branchStudentMap[b.branch] || 0,
     }))
 
+    // Get recent media images (take 12)
+    const media = await db.mediaImage.findMany({
+      take: 12,
+      orderBy: { createdAt: 'desc' },
+    })
+
+    // Get all center info entries
+    const centerInfo = await db.centerInfo.findMany({
+      orderBy: { section: 'asc' },
+    })
+
+    // Get today's attendance stats
+    const today = new Date().toISOString().split('T')[0]
+    const todayAttendance = await db.attendance.findMany({
+      where: { date: today },
+    })
+    const attendanceStats = {
+      present: todayAttendance.filter((a) => a.status === 'حاضر').length,
+      absent: todayAttendance.filter((a) => a.status === 'غائب').length,
+      late: todayAttendance.filter((a) => a.status === 'متأخر').length,
+      total: todayAttendance.length,
+    }
+
     return NextResponse.json({
       centerName: 'مركز الشفاء لتحفيظ القرآن الكريم',
       totalHalakat,
@@ -70,6 +88,9 @@ export async function GET() {
       branches: branchData,
       categories: categories.map((c) => ({ name: c.category, count: c._count.id })),
       activities,
+      media,
+      centerInfo,
+      attendanceStats,
     })
   } catch (error) {
     console.error('Public API error:', error)

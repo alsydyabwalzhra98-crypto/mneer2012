@@ -79,3 +79,13 @@ model Activity {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model CenterInfo {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("text")
+  section   String   @default("عام")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

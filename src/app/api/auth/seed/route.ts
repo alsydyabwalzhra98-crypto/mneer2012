@@ -15,6 +15,14 @@ export async function GET() {
       })
     }
 
+    // Seed public viewer
+    const publicCount = await db.admin.count({ where: { username: 'public' } })
+    if (publicCount === 0) {
+      await db.admin.create({
+        data: { username: 'public', password: 'public123', name: 'العرض العام' }
+      })
+    }
+
     return NextResponse.json({ message: 'Seed completed' })
   } catch (error) {
     console.error('Seed error:', error)
