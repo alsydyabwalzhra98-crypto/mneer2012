@@ -115,15 +115,19 @@ interface PublicData {
 }
 
 const BRANCH_STYLES: Record<string, { bg: string; accent: string; border: string; icon: string }> = {
-  وبرة: { bg: 'bg-teal-50', accent: '#0d9488', border: '#99f6e4', icon: '#14b8a6' },
-  الوادي: { bg: 'bg-cyan-50', accent: '#0891b2', border: '#a5f3fc', icon: '#06b6d4' },
   السرور: { bg: 'bg-emerald-50', accent: '#059669', border: '#a7f3d0', icon: '#10b981' },
+  'المركز العام': { bg: 'bg-amber-50', accent: '#d97706', border: '#fde68a', icon: '#f59e0b' },
+  الوادي: { bg: 'bg-cyan-50', accent: '#0891b2', border: '#a5f3fc', icon: '#06b6d4' },
+  وبرة: { bg: 'bg-teal-50', accent: '#0d9488', border: '#99f6e4', icon: '#14b8a6' },
+  ضية: { bg: 'bg-rose-50', accent: '#e11d48', border: '#fecdd3', icon: '#f43f5e' },
+  المنعم: { bg: 'bg-violet-50', accent: '#7c3aed', border: '#ddd6fe', icon: '#8b5cf6' },
 }
 
 const CATEGORY_STYLES: Record<string, string> = {
   '1-10': 'bg-green-100 text-green-700',
   '10-20': 'bg-blue-100 text-blue-700',
   '20-30': 'bg-amber-100 text-amber-700',
+  '30-20': 'bg-orange-100 text-orange-700',
   'محو الامية': 'bg-purple-100 text-purple-700',
 }
 

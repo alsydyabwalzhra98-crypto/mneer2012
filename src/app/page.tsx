@@ -151,9 +151,9 @@ const ALBUMS = [
 
 const LEVELS = ['مبتدئ', 'متوسط', 'متقدم']
 
-const BRANCHES = ['وبرة', 'الوادي', 'السرور']
+const BRANCHES = ['السرور', 'المركز العام', 'الوادي', 'وبرة', 'ضية', 'المنعم']
 
-const CATEGORIES = ['1-10', '10-20', '20-30', 'محو الامية']
+const CATEGORIES = ['1-10', '10-20', '20-30', '30-20', 'محو الامية']
 
 const STATUS_COLORS: Record<string, string> = {
   حاضر: 'bg-emerald-100 text-emerald-800 border-emerald-300',
@@ -164,15 +164,19 @@ const STATUS_COLORS: Record<string, string> = {
 const ACTIVITY_TYPES = ['عامة', 'قرآنية', 'ثقافية', 'رياضية', 'اجتماعية']
 
 const BRANCH_COLORS: Record<string, string> = {
-  وبرة: 'bg-teal-100 text-teal-700 border-teal-300',
-  الوادي: 'bg-cyan-100 text-cyan-700 border-cyan-300',
   السرور: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  'المركز العام': 'bg-amber-100 text-amber-700 border-amber-300',
+  الوادي: 'bg-cyan-100 text-cyan-700 border-cyan-300',
+  وبرة: 'bg-teal-100 text-teal-700 border-teal-300',
+  ضية: 'bg-rose-100 text-rose-700 border-rose-300',
+  المنعم: 'bg-violet-100 text-violet-700 border-violet-300',
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
   '1-10': 'bg-green-100 text-green-700',
   '10-20': 'bg-blue-100 text-blue-700',
   '20-30': 'bg-amber-100 text-amber-700',
+  '30-20': 'bg-orange-100 text-orange-700',
   'محو الامية': 'bg-purple-100 text-purple-700',
 }
 
