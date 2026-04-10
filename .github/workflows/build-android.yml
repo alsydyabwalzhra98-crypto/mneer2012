@@ -46,7 +46,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Capacitor
-        run: bun add -D @capacitor/cli @capacitor/core
+        run: bun add -D @capacitor/cli @capacitor/core @capacitor/android
 
       - name: Add Android Platform
         run: npx cap add android
