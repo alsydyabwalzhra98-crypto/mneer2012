@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo, Amiri } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -83,7 +83,7 @@ export default function RootLayout({
         style={{ backgroundColor: '#f8f9fa' }}
       >
         {children}
-        <Toaster />
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );
