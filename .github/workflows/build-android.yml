@@ -33,7 +33,6 @@ jobs:
         run: |
           mkdir -p app-android/app/src/main/java/com/alshifa/quran
           mkdir -p app-android/app/src/main/res/values
-          mkdir -p app-android/app/src/main/res/mipmap-hdpi
 
           cat > app-android/app/src/main/java/com/alshifa/quran/MainActivity.java << 'JAVA'
           package com.alshifa.quran;
@@ -78,11 +77,11 @@ jobs:
 
           cat > app-android/app/src/main/AndroidManifest.xml << 'XML'
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.alshifa.quran">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <application android:allowBackup="true" android:label="مركز الشفاء" android:theme="@style/AppTheme" android:usesCleartextTraffic="true">
-                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboard" android:windowSoftInputMode="adjustResize">
+                  <activity android:name="com.alshifa.quran.MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboard" android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -106,12 +105,6 @@ jobs:
           <resources><string name="app_name">مركز الشفاء</string></resources>
           XML
 
-          cat > app-android/build.gradle << 'GRADLE'
-          plugins {
-              id 'com.android.application' version '8.1.4' apply false
-          }
-          GRADLE
-
           cat > app-android/settings.gradle << 'GRADLE'
           pluginManagement {
               repositories {
@@ -120,8 +113,21 @@ jobs:
                   gradlePluginPortal()
               }
           }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
           rootProject.name = "AlShifa"
           include ':app'
+          GRADLE
+
+          cat > app-android/build.gradle << 'GRADLE'
+          plugins {
+              id 'com.android.application' version '8.1.4' apply false
+          }
           GRADLE
 
           cat > app-android/app/build.gradle << 'GRADLE'
