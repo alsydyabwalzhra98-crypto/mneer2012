@@ -1,13 +1,3 @@
-// ═══════════════════════════════════════════════════════════════
-// مركز الشفاء - PostgreSQL Schema (للاستخدام مع Supabase/Neon)
-// ═══════════════════════════════════════════════════════════════
-//
-// كيفية الاستخدام:
-// 1. انسخ هذا المحتوى إلى ملف prisma/schema.prisma (استبدل المحتوى الحالي)
-// 2. عدّل DATABASE_URL في ملف .env ليشير إلى قاعدة بيانات PostgreSQL
-// 3. شغّل: npx prisma db push
-// ═══════════════════════════════════════════════════════════════
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -30,9 +20,9 @@ model Halaka {
   id          String    @id @default(cuid())
   name        String
   teacher     String
-  time        String    @default("")
-  location    String    @default("")
-  branch      String    @default("السرور")
+  time        String
+  location    String
+  branch      String   @default("السرور")
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -75,7 +65,7 @@ model MediaImage {
   id        String   @id @default(cuid())
   album     String
   filename  String
-  url       String
+  url       String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -83,9 +73,19 @@ model MediaImage {
 model Activity {
   id          String   @id @default(cuid())
   title       String
-  description String?
+  description String?  @db.Text
   date        String
   type        String   @default("عامة")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model CenterInfo {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("text")
+  section   String   @default("عام")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

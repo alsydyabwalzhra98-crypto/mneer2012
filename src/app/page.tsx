@@ -386,7 +386,12 @@ export default function Home() {
       const res = await fetch(`/api/media?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
-        setMediaImages(data)
+        // Handle both old format (array) and new format ({ images, albums })
+        if (Array.isArray(data)) {
+          setMediaImages(data)
+        } else {
+          setMediaImages(data.images || [])
+        }
       }
     } catch {
       // ignore

@@ -1,9 +1,9 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
-// GET all images
+// GET all images (grouped by album info)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -17,14 +17,24 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json(images)
+    // Get album summary if no specific album filter
+    if (!album) {
+      const albums = await db.mediaImage.groupBy({
+        by: ['album'],
+        _count: { id: true },
+        orderBy: { album: 'asc' },
+      })
+      return NextResponse.json({ images, albums })
+    }
+
+    return NextResponse.json({ images, albums: [] })
   } catch (error) {
     console.error('Fetch media error:', error)
     return NextResponse.json({ error: 'فشل في تحميل الصور' }, { status: 500 })
   }
 }
 
-// POST upload image
+// POST upload image — stores as base64 in DB for cloud compatibility
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
@@ -41,16 +51,28 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const filename = `${Date.now()}-${file.name}`
-    const filepath = path.join(process.cwd(), 'public', 'uploads', filename)
+    // Convert to base64 data URL for cloud storage
+    const base64 = buffer.toString('base64')
+    const mimeType = file.type || 'image/jpeg'
+    const dataUrl = `data:${mimeType};base64,${base64}`
 
-    await writeFile(filepath, buffer)
+    const filename = `${Date.now()}-${file.name}`
+
+    // Also save locally for faster access
+    try {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+      await mkdir(uploadDir, { recursive: true })
+      const filepath = path.join(uploadDir, filename)
+      await writeFile(filepath, buffer)
+    } catch {
+      // Local save might fail in some environments, base64 in DB is the primary storage
+    }
 
     const image = await db.mediaImage.create({
       data: {
         album,
         filename,
-        url: `/uploads/${filename}`
+        url: dataUrl
       }
     })
 
@@ -73,9 +95,9 @@ export async function DELETE(request: Request) {
 
     const image = await db.mediaImage.findUnique({ where: { id } })
     if (image) {
-      const fs = await import('fs/promises')
       try {
-        await fs.unlink(path.join(process.cwd(), 'public', image.filename))
+        const { unlink } = await import('fs/promises')
+        await unlink(path.join(process.cwd(), 'public', 'uploads', image.filename))
       } catch {
         // File might not exist
       }

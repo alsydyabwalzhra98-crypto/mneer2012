@@ -27,9 +27,8 @@ export async function GET() {
       _count: { id: true },
     })
 
-    // Get recent activities
+    // Get all activities (not just recent)
     const activities = await db.activity.findMany({
-      take: 6,
       orderBy: { date: 'desc' },
     })
 
@@ -56,11 +55,22 @@ export async function GET() {
       studentsCount: branchStudentMap[b.branch] || 0,
     }))
 
-    // Get recent media images (take 12)
-    const media = await db.mediaImage.findMany({
-      take: 12,
+    // Get ALL media images with album grouping
+    const allMedia = await db.mediaImage.findMany({
       orderBy: { createdAt: 'desc' },
     })
+
+    // Group media by album
+    const albumMap: Record<string, typeof allMedia> = {}
+    for (const img of allMedia) {
+      if (!albumMap[img.album]) albumMap[img.album] = []
+      albumMap[img.album].push(img)
+    }
+    const albums = Object.entries(albumMap).map(([name, images]) => ({
+      name,
+      count: images.length,
+      images,
+    }))
 
     // Get all center info entries
     const centerInfo = await db.centerInfo.findMany({
@@ -71,6 +81,10 @@ export async function GET() {
     const today = new Date().toISOString().split('T')[0]
     const todayAttendance = await db.attendance.findMany({
       where: { date: today },
+      include: {
+        student: { select: { name: true } },
+        halaka: { select: { name: true, branch: true, teacher: true } },
+      },
     })
     const attendanceStats = {
       present: todayAttendance.filter((a) => a.status === 'حاضر').length,
@@ -79,18 +93,62 @@ export async function GET() {
       total: todayAttendance.length,
     }
 
+    // Get attendance per halaka for today
+    const attendanceByHalaka: Record<string, {
+      halakaName: string
+      branch: string
+      teacher: string
+      present: number
+      absent: number
+      late: number
+      total: number
+      records: { studentName: string; status: string; notes?: string }[]
+    }> = {}
+    for (const a of todayAttendance) {
+      const halakaKey = a.halakaId || 'unknown'
+      if (!attendanceByHalaka[halakaKey]) {
+        attendanceByHalaka[halakaKey] = {
+          halakaName: a.halaka?.name || 'غير محدد',
+          branch: a.halaka?.branch || '',
+          teacher: a.halaka?.teacher || '',
+          present: 0,
+          absent: 0,
+          late: 0,
+          total: 0,
+          records: [],
+        }
+      }
+      const group = attendanceByHalaka[halakaKey]
+      group.total++
+      if (a.status === 'حاضر') group.present++
+      else if (a.status === 'غائب') group.absent++
+      else if (a.status === 'متأخر') group.late++
+      group.records.push({
+        studentName: a.student?.name || 'غير معروف',
+        status: a.status,
+        notes: a.notes || undefined,
+      })
+    }
+
+    // Get total images count
+    const totalImages = allMedia.length
+
     return NextResponse.json({
       centerName: 'مركز الشفاء لتحفيظ القرآن الكريم',
       totalHalakat,
       totalStudents,
       totalActivities,
+      totalImages,
       halakat,
       branches: branchData,
       categories: categories.map((c) => ({ name: c.category, count: c._count.id })),
       activities,
-      media,
+      media: allMedia,
+      albums,
       centerInfo,
       attendanceStats,
+      attendanceByHalaka: Object.values(attendanceByHalaka),
+      todayDate: today,
     })
   } catch (error) {
     console.error('Public API error:', error)
