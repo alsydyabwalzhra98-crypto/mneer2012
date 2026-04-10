@@ -19,10 +19,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '22'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -51,39 +51,32 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Install Capacitor and Android
-        run: bun add -D @capacitor/cli @capacitor/core @capacitor/android
+      - name: Install Capacitor CLI
+        run: bun add -D @capacitor/cli @capacitor/core
 
-      - name: Build Next.js static export
-        run: bun run build:export
+      - name: Build Next.js
+        run: bun run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Add Android platform
+      - name: Add Android Platform
         run: npx cap add android || true
 
       - name: Sync Capacitor
         run: npx cap sync android
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build Android Debug APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: alshifa-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
-
-      - name: Create Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: android/app/build/outputs/apk/debug/*.apk
-          tag_name: v1.0.${{ github.run_number }}
-          name: "تطبيق مركز الشفاء v1.0.${{ github.run_number }}"
-          body: |
-            إصدار أندرويد لمركز الشفاء.
-        continue-on-error: true
