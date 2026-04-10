@@ -29,10 +29,6 @@ jobs:
           mkdir -p app-android/app/src/main/java/com/alshifa/quran
           mkdir -p app-android/app/src/main/res/values
           mkdir -p app-android/app/src/main/res/mipmap-hdpi
-          mkdir -p app-android/app/src/main/res/mipmap-mdpi
-          mkdir -p app-android/app/src/main/res/mipmap-xhdpi
-          mkdir -p app-android/app/src/main/res/mipmap-xxhdpi
-          mkdir -p app-android/app/src/main/res/mipmap-xxxhdpi
 
           # MainActivity.java
           cat > app-android/app/src/main/java/com/alshifa/quran/MainActivity.java << 'JAVA'
@@ -157,32 +153,29 @@ jobs:
 
           # build.gradle (project)
           cat > app-android/build.gradle << 'GRADLE'
-          buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.1.0'
-              }
-          }
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+          plugins {
+              id 'com.android.application' version '8.1.4' apply false
           }
           GRADLE
 
           # settings.gradle
           cat > app-android/settings.gradle << 'GRADLE'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
           rootProject.name = "AlShifa"
           include ':app'
           GRADLE
 
           # build.gradle (app)
           cat > app-android/app/build.gradle << 'GRADLE'
-          apply plugin: 'com.android.application'
+          plugins {
+              id 'com.android.application'
+          }
           
           android {
               namespace 'com.alshifa.quran'
@@ -197,7 +190,6 @@ jobs:
               buildTypes {
                   release {
                       minifyEnabled false
-                      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
                   }
               }
               compileOptions {
@@ -210,22 +202,21 @@ jobs:
           # proguard
           echo "" > app-android/app/proguard-rules.pro
 
-          # gradle wrapper properties
+          # gradle wrapper with fixed version
           mkdir -p app-android/gradle/wrapper
-          cat > app-android/gradle/wrapper/gradle-wrapper.properties << 'PROP'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-all.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          PROP
+          
+          # Download gradle 8.4 directly
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp/
+          /tmp/gradle-8.4/bin/gradle wrapper --gradle-version 8.4
+          mv gradlew gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties app-android/
+          rm -rf /tmp/gradle* /tmp/gradle.zip
 
       - name: Build APK
         working-directory: app-android
         run: |
-          gradle wrapper --gradle-version 8.0
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
