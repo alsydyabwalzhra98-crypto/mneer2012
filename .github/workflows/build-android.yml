@@ -52,8 +52,9 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Install Capacitor
-        run: bun add -D @capacitor/cli @capacitor/core
+       - name: Install Capacitor and Android
+        run: bun add -D @capacitor/cli @capacitor/core @capacitor/android
+
 
       - name: Build Next.js static export
         run: bun run build:export
