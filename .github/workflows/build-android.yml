@@ -46,48 +46,31 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Install Capacitor CLI
+      - name: Install Capacitor
         run: bun add -D @capacitor/cli @capacitor/core
+
+      - name: Build Next.js static export
+        run: bun run build:export
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Add Android platform
+        run: npx cap add android || true
 
       - name: Sync Capacitor
         run: npx cap sync android
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build Android Debug APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Sign Android Release APK (optional)
-        if: github.event_name == 'push'
-        working-directory: android
-        run: |
-          ./gradlew assembleRelease
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        continue-on-error: true
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: alshifa-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
-
-      - name: Upload Release APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: alshifa-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
-        continue-on-error: true
 
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -98,9 +81,5 @@ jobs:
           name: "تطبيق مركز الشفاء v1.0.${{ github.run_number }}"
           body: |
             ## مركز الشفاء لتحفيظ القرآن الكريم
-            ### التغييرات:
-            - بناء تلقائي لل APK
-            - الإصدار التجريبي
-          draft: false
-          prerelease: true
+            ### الإصدار التجريبي
         continue-on-error: true

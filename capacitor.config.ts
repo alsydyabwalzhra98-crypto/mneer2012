@@ -5,10 +5,9 @@ const config: CapacitorConfig = {
   appName: 'مركز الشفاء',
   webDir: 'out',
   server: {
-    // For development, use local server
-    // url: 'http://localhost:3000',
-    // For production, use your deployed URL (Vercel, etc.)
-    // url: 'https://your-app.vercel.app',
+    // ✅ بعد نشر التطبيق على Vercel، ضع الرابط هنا
+    // مثال: url: 'https://alshifa-center.vercel.app',
+    // حالياً: التطبيق سيعمل كـ WebView للرابط المحدد
     androidScheme: 'https',
     cleartext: true,
   },
